@@ -1,0 +1,553 @@
+{
+  "user": {
+    "id": "cnxviopq3o34ir",
+    "username": "Thorin",
+    "sex": "male",
+    "level": {
+      "id": "289vdncv09i0v9hw23",
+      "category": {
+        "id": "3gj0w9vovs9iht2",
+        "name": "basic",
+        "createdAt": "2025-08-06T23:00:04.111Z"
+      },
+      "name": "advanced",
+      "level": 1,
+      "createdAt": "2025-08-06T23:00:04.111Z"
+    },
+    "createdAt": "2025-08-06T23:00:04.111Z"
+  },
+  "group": {
+    "id": "mcxvkedjscioenv",
+    "name": "Samurai Flicks",
+    "levelCategory": {
+      "id": "3gj0w9vovs9iht2",
+      "name": "basic",
+      "createdAt": "2025-08-06T23:00:04.111Z"
+    },
+    "managedBy": ["cnxviopq3o34ir"],
+    "createdAt": "2025-08-06T23:00:04.111Z",
+    "schedules": [
+      {
+        "id": "xcvnias3452wihweq",
+        "ended": false,
+        "players": [
+          {
+            "id": "vio34fv46nev89wehv",
+            "username": "Gimli",
+            "sex": "male",
+            "level": {
+              "id": "289vdncv09i0v9hw23",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "advanced",
+              "level": 1,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "createdAt": "2025-08-06T23:00:04.111Z",
+            "order": 1,
+            "gameCount": 4
+          },
+          {
+            "id": "cnxv9qjf39qw09pi0",
+            "username": "Gandalf",
+            "sex": "male",
+            "level": {
+              "id": "289vdncv09i0v9hw23",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "advanced",
+              "level": 1,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "createdAt": "2025-08-06T23:00:04.111Z",
+            "order": 2,
+            "gameCount": 3
+          },
+          {
+            "id": "f834f39vn93f9vnjk",
+            "username": "Arwen",
+            "sex": "female",
+            "level": {
+              "id": "289vdncv09i0v9hw23",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "advanced",
+              "level": 1,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "createdAt": "2025-08-06T23:00:04.111Z",
+            "order": 3,
+            "gameCount": 6
+          },
+          {
+            "id": "idfv9sig0139k9rv9",
+            "username": "Sauron",
+            "sex": "male",
+            "level": {
+              "id": "289vdncv09i0v9hw23",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "advanced",
+              "level": 1,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "createdAt": "2025-08-06T23:00:04.111Z",
+            "order": 7,
+            "gameCount": 2
+          },
+          {
+            "id": "10aim7zd3w4s9zam",
+            "username": "Theoden",
+            "sex": "male",
+            "level": {
+              "id": "289vdncv09i0v9hw23",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "advanced",
+              "level": 1,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "order": 4,
+            "gameCount": 4
+          },
+          {
+            "id": "349f3vinvoinsadkf",
+            "username": "Frodo",
+            "sex": "male",
+            "level": {
+              "id": "cxnvjidnvei45j4",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "beginner",
+              "level": 3,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "createdAt": "2025-08-06T23:00:04.111Z",
+            "order": 6,
+            "gameCount": 3
+          },
+          {
+            "id": "tyuheof34xbm780",
+            "username": "Eowyn",
+            "sex": "female",
+            "level": {
+              "id": "cxnvjidnvei45j4",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "beginner",
+              "level": 3,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "createdAt": "2025-08-06T23:00:04.111Z",
+            "order": 5,
+            "gameCount": 5
+          },
+          {
+            "id": "saifhpewonv",
+            "username": "Aragorn",
+            "sex": "male",
+            "level": {
+              "id": "289vdncv09i0v9hw23",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "advanced",
+              "level": 1,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          {
+            "id": "cx32is9i0cazxvn",
+            "username": "Pippin",
+            "sex": "male",
+            "level": {
+              "id": "zxoa9w7dnado482nz",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "intermediate",
+              "level": 2,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          {
+            "id": "qpowinfna",
+            "username": "Legolas",
+            "sex": "male",
+            "level": {
+              "id": "289vdncv09i0v9hw23",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "advanced",
+              "level": 1,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          {
+            "id": "384fsoicj9urqwe0k",
+            "username": "Merry",
+            "sex": "male",
+            "level": {
+              "id": "zxoa9w7dnado482nz",
+              "category": {
+                "id": "3gj0w9vovs9iht2",
+                "name": "basic",
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              },
+              "name": "intermediate",
+              "level": 2,
+              "createdAt": "2025-08-06T23:00:04.111Z"
+            },
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          }
+        ],
+        "courts": [
+          {
+            "id": "23fuinwep9q3i9vn",
+            "number": "1",
+            "match": [
+              {
+                "id": "3124iflkdlaizwepq",
+                "ended": false,
+                "partners": [
+                  {
+                    "id": "sdkvnpzi09nsd",
+                    "users": [
+                      {
+                        "id": "saifhpewonv",
+                        "username": "Aragorn",
+                        "sex": "male",
+                        "level": {
+                          "id": "289vdncv09i0v9hw23",
+                          "category": {
+                            "id": "3gj0w9vovs9iht2",
+                            "name": "basic",
+                            "createdAt": "2025-08-06T23:00:04.111Z"
+                          },
+                          "name": "advanced",
+                          "level": 1,
+                          "createdAt": "2025-08-06T23:00:04.111Z"
+                        },
+                        "createdAt": "2025-08-06T23:00:04.111Z"
+                      },
+                      {
+                        "id": "cx32is9i0cazxvn",
+                        "username": "Pippin",
+                        "sex": "male",
+                        "level": {
+                          "id": "zxoa9w7dnado482nz",
+                          "category": {
+                            "id": "3gj0w9vovs9iht2",
+                            "name": "basic",
+                            "createdAt": "2025-08-06T23:00:04.111Z"
+                          },
+                          "name": "intermediate",
+                          "level": 2,
+                          "createdAt": "2025-08-06T23:00:04.111Z"
+                        },
+                        "createdAt": "2025-08-06T23:00:04.111Z"
+                      }
+                    ],
+                    "createdAt": "2025-08-06T23:00:04.111Z"
+                  },
+                  {
+                    "id": "zcxmnoiqnsa",
+                    "users": [
+                      {
+                        "id": "qpowinfna",
+                        "username": "Legolas",
+                        "sex": "male",
+                        "level": {
+                          "id": "289vdncv09i0v9hw23",
+                          "category": {
+                            "id": "3gj0w9vovs9iht2",
+                            "name": "basic",
+                            "createdAt": "2025-08-06T23:00:04.111Z"
+                          },
+                          "name": "advanced",
+                          "level": 1,
+                          "createdAt": "2025-08-06T23:00:04.111Z"
+                        },
+                        "createdAt": "2025-08-06T23:00:04.111Z"
+                      },
+                      {
+                        "id": "384fsoicj9urqwe0k",
+                        "username": "Merry",
+                        "sex": "male",
+                        "level": {
+                          "id": "zxoa9w7dnado482nz",
+                          "category": {
+                            "id": "3gj0w9vovs9iht2",
+                            "name": "basic",
+                            "createdAt": "2025-08-06T23:00:04.111Z"
+                          },
+                          "name": "intermediate",
+                          "level": 2,
+                          "createdAt": "2025-08-06T23:00:04.111Z"
+                        },
+                        "createdAt": "2025-08-06T23:00:04.111Z"
+                      }
+                    ],
+                    "createdAt": "2025-08-06T23:00:04.111Z"
+                  }
+                ],
+                "createdAt": "2025-08-06T23:00:04.111Z"
+              }
+            ],
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "id": "vio34fv46nev89wehv",
+        "username": "Gimli",
+        "sex": "male",
+        "level": {
+          "id": "289vdncv09i0v9hw23",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "advanced",
+          "level": 1,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z",
+        "order": 1,
+        "gameCount": 4
+      },
+      {
+        "id": "cnxv9qjf39qw09pi0",
+        "username": "Gandalf",
+        "sex": "male",
+        "level": {
+          "id": "289vdncv09i0v9hw23",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "advanced",
+          "level": 1,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z",
+        "order": 2,
+        "gameCount": 3
+      },
+      {
+        "id": "f834f39vn93f9vnjk",
+        "username": "Arwen",
+        "sex": "female",
+        "level": {
+          "id": "289vdncv09i0v9hw23",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "advanced",
+          "level": 1,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z",
+        "order": 3,
+        "gameCount": 6
+      },
+      {
+        "id": "idfv9sig0139k9rv9",
+        "username": "Sauron",
+        "level": {
+          "id": "289vdncv09i0v9hw23",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "advanced",
+          "level": 1,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z",
+        "order": 7,
+        "gameCount": 2
+      },
+      {
+        "id": "10aim7zd3w4s9zam",
+        "username": "Theoden",
+        "sex": "male",
+        "level": {
+          "id": "289vdncv09i0v9hw23",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "advanced",
+          "level": 1,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "order": 4,
+        "gameCount": 4
+      },
+      {
+        "id": "349f3vinvoinsadkf",
+        "username": "Frodo",
+        "sex": "male",
+        "level": {
+          "id": "zxoa9w7dnado482nz",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "intermediate",
+          "level": 2,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z",
+        "order": 6,
+        "gameCount": 3
+      },
+      {
+        "id": "tyuheof34xbm780",
+        "username": "Eowyn",
+        "sex": "female",
+        "level": {
+          "id": "cxnvjidnvei45j4",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "beginner",
+          "level": 3,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z",
+        "order": 5,
+        "gameCount": 5
+      },
+      {
+        "id": "saifhpewonv",
+        "username": "Aragorn",
+        "sex": "male",
+        "level": {
+          "id": "289vdncv09i0v9hw23",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "advanced",
+          "level": 1,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z"
+      },
+      {
+        "id": "cx32is9i0cazxvn",
+        "username": "Pippin",
+        "sex": "male",
+        "level": {
+          "id": "zxoa9w7dnado482nz",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "intermediate",
+          "level": 2,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z"
+      },
+      {
+        "id": "qpowinfna",
+        "username": "Legolas",
+        "sex": "male",
+        "level": {
+          "id": "289vdncv09i0v9hw23",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "advanced",
+          "level": 1,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z"
+      },
+      {
+        "id": "384fsoicj9urqwe0k",
+        "username": "Merry",
+        "sex": "male",
+        "level": {
+          "id": "zxoa9w7dnado482nz",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "intermediate",
+          "level": 2,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z"
+      },
+      {
+        "id": "xcz243dcvimvimco",
+        "username": "Bilbo",
+        "sex": "male",
+        "level": {
+          "id": "zxoa9w7dnado482nz",
+          "category": {
+            "id": "3gj0w9vovs9iht2",
+            "name": "basic",
+            "createdAt": "2025-08-06T23:00:04.111Z"
+          },
+          "name": "intermediate",
+          "level": 2,
+          "createdAt": "2025-08-06T23:00:04.111Z"
+        },
+        "createdAt": "2025-08-06T23:00:04.111Z"
+      }
+    ],
+    "lastPlayed": "2025-08-06T23:00:04.111Z"
+  }
+}

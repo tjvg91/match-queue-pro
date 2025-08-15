@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Match Queue Pro",
+    "slug": "match-queue-pro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "matchqueuepro",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.match.queue",
+      "splash": {
+        "image": "./assets/images/splash-icon.png",
+        "backgroundColor": "#000000",
+        "resizeMode": "contain"
+      }
+    },
+    "android": {
+      "edgeToEdgeEnabled": true,
+      "package": "com.match.queue",
+      "splash": {
+        "image": "./assets/images/splash-icon.png",
+        "backgroundColor": "#000000",
+        "resizeMode": "native"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ca083cf5-6a32-4dd0-bf87-ce77fc7f0af9"
+      }
+    }
+  }
+}

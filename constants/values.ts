@@ -1,0 +1,1 @@
+export const COURT_DIMENSIONS_RATIO = 6.1 / 13.4;
