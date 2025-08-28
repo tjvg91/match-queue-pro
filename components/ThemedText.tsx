@@ -3,7 +3,7 @@ import { Colors } from '@/constants/Colors';
 
 export type ThemedTextProps = TextProps & {
   color?: string
-  type?: 'default' | 'title' | 'semiBold' | 'bold' | 'light' | 'extraLight' | 'subtitle' | 'link';
+  type?: 'default' | 'title' | 'semiBold' | 'bold' | 'light' | 'extraLight' | 'subtitle' | 'link' | 'italic';
   fontSize?: number
   style?: StyleProp<TextStyle>
 };
@@ -27,6 +27,7 @@ export function ThemedText({
         type === 'semiBold' ? styles.defaultSemiBold : undefined,
         type === 'subtitle' ? styles.subtitle : undefined,
         type === 'link' ? styles.link : undefined,
+        type === 'italic' ? styles.italic : undefined,
         style,
       ]}
       {...rest}
@@ -61,5 +62,8 @@ const styles = StyleSheet.create({
   },
   link: {
     fontFamily: 'SourceSans',
+  },
+  italic: {
+    fontFamily: 'SourceSansExtraLightItalic',
   },
 });

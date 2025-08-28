@@ -1,3 +1,5 @@
+import { SupabaseClient } from "@supabase/supabase-js";
+
 export interface LevelCategory {
   id: string;
   name: string;
@@ -31,14 +33,18 @@ export interface MQStore {
   errorMessages?: string[];
   activeGroup?: Group
   activeSchedule?: Schedule
+  supabase: SupabaseClient<any, "public", any> | undefined
+  isLoading: boolean
 
   setIsAuthenticated: (isAuthenticated: boolean) => void;
-  setErrorMessages?: (errorMessages: string[]) => void;
+  setErrorMessages: (errorMessages: string[]) => void;
   clearErrorMessages?: () => void;
-  setUser?: (user: User) => void;
+  setUser: (user?: User) => void;
   clearUser?: () => void;
-  setActiveGroup?: (group: Group) => void
-  setActiveSchedule?: (schedule: Schedule) => void
+  setActiveGroup: (group?: Group) => void
+  setActiveSchedule: (schedule: Schedule) => void
+  setSupabase: (client: SupabaseClient<any, "public", any>) => void
+  setLoading: (loading: boolean) => void
 }
 
 export interface Partner {
@@ -80,4 +86,11 @@ export interface Group {
   createdAt: Date;
 }
 
+export interface Option {
+ label: string,
+  value: string 
+}
+
 export type CourtMode = "PRE-GAME" | "IN-GAME" | "POST-GAME" | "PLACEHOLDER";
+
+export type ToastType = 'success' | 'error' | 'info' | 'warning';

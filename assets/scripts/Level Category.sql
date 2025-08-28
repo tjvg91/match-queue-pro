@@ -1,0 +1,1 @@
+insert into public.level_category (id, name) values (uuid_generate_v4(), 'Basic');

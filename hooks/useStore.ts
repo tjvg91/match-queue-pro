@@ -13,6 +13,12 @@ const useMQStore = create(
       setUser: (user) => set({ user }),
       clearUser: () => set({ user: undefined }),
 
+      isLoading: false,
+      setLoading: (isLoading: boolean) => set({ isLoading }),
+
+      supabase: undefined,
+      setSupabase: (supabase => set({ supabase })),
+
       errorMessages: [],
       setErrorMessages: (errorMessages: string[]) => set({ errorMessages }),
       clearErrorMessages: () => set({ errorMessages: [] }),

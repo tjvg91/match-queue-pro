@@ -12,6 +12,7 @@ type TextInputProps = Props & {
 };
 
 const TextInput: React.FC<TextInputProps> = ({ label, error, value, darkMode = true, ...props }) => {
+	const { editable } = props;
 
 	return (
 		<View style={styles.container}>
@@ -21,15 +22,15 @@ const TextInput: React.FC<TextInputProps> = ({ label, error, value, darkMode = t
 				label={label || ''}
 				isPassword={props.isPassword}
 				placeholderTextColor={Colors.label}
-				inputStyles={{ ...styles.input, color: darkMode ? Colors.textColor : Colors.darkBlue }}
+				inputStyles={{ ...styles.input, color: !editable ? Colors.label : darkMode ? Colors.textColor : Colors.darkBlue }}
 				customLabelStyles={{
 					colorBlurred: darkMode ? Colors.label : Colors.darkBlue,
-					colorFocused: error ? Colors.red : darkMode ? Colors.textColor : Colors.darkBlue,
-					leftFocused: 4,
+					colorFocused: !editable ? Colors.label : error ? Colors.red : darkMode ? Colors.textColor : Colors.darkBlue,
+					leftFocused: 0,
 				}}
 				containerStyles={{
 					...styles.inputContainer,
-					borderBottomColor: error ? Colors.red : darkMode ? Colors.label : Colors.darkBlue
+					borderBottomColor: !editable ? Colors.label : error ? Colors.red : darkMode ? Colors.label : Colors.darkBlue
 				}}
 				{...props}
 				 />

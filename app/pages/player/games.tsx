@@ -7,15 +7,15 @@ import { StyleSheet, View } from "react-native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import TextInput from "@/components/Input";
 import { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from "react-native-reanimated";
-import { useNavigation } from "@react-navigation/native";
 import { isMobileWidth } from "@/app/utils";
+import { useRouter } from "expo-router";
 
 const isMobile = isMobileWidth();
 
 export default function PlayerGamesScreen() {
   const [mode, setMode] = useState<"default" | "join" | "check in">("default");
   const shadowOpacity = useSharedValue(0.4);
-  const navigation = useNavigation();
+  const router = useRouter();
 
   const containerRef = useRef(null);
 
@@ -24,18 +24,30 @@ export default function PlayerGamesScreen() {
   }));
 
   const renderHostAction = () => (
-    <Button
+    <>
+      <Button
         type="clear"
         text="I'll host instead"
         fontSize={isMobile ? 12 : 16}
-        textStyle={{ marginTop: -5 }}
-        onPress={() => navigation.navigate('Host')}
-      />
+        onPress={() => router.replace('/pages/host')}
+        />
+      <Button
+        type="clear"
+        fontSize={isMobile ? 12 : 16}
+        text="Go back home"
+        onPress={() => router.back()} />
+    </>
   )
 
   const showEmptyGames = () => (
     <>
-      <ThemedText type="default" fontSize={isMobile ? 28 : 36} color={Colors.label}>No active games</ThemedText>
+      <ThemedText
+        type="default"
+        fontSize={isMobile ? 32 : 36}
+        style={{ marginTop: 60 }}
+        color={Colors.label}>
+        No active games
+      </ThemedText>
 
       <Button
         type="clear" 

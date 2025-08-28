@@ -1,92 +1,93 @@
 CREATE TABLE "user" (
-  "id" varchar PRIMARY KEY,
-  "username" varchar,
-  "email" varchar,
-  "sex" varchar,
-  "password" varchar,
-  "verified" varchar,
+  "id" uuid PRIMARY KEY,
+  "username" text UNIQUE,
+  "player_code" uuid UNIQUE,
+  "email" text,
+  "sex" text,
+  "password" text,
+  "verified" text,
   "created_at" timestamp
 );
 
 CREATE TABLE "user_group" (
-  "id" varchar PRIMARY KEY,
-  "user_id" varchar,
-  "group_id" varchar,
+  "id" uuid PRIMARY KEY,
+  "user_id" uuid,
+  "group_id" uuid,
   "created_at" timestamp
 );
 
 CREATE TABLE "group" (
-  "id" varchar PRIMARY KEY,
-  "name" varchar,
-  "level_category" varchar,
-  "managed_by" varchar,
+  "id" uuid PRIMARY KEY,
+  "name" text,
+  "level_category" text,
+  "managed_by" text,
   "last_played" timestamp,
   "created_at" timestamp
 );
 
 CREATE TABLE "level_category" (
-  "id" varchar PRIMARY KEY,
-  "name" varchar
+  "id" uuid PRIMARY KEY,
+  "name" text
 );
 
 CREATE TABLE "level" (
-  "id" varchar PRIMARY KEY,
-  "level_category_id" varchar,
-  "name" varchar,
+  "id" uuid PRIMARY KEY,
+  "level_category_id" uuid,
+  "name" text,
   "level" integer,
   "created_at" timestamp
 );
 
 CREATE TABLE "user_level" (
-  "id" varchar PRIMARY KEY,
-  "user_id" varchar,
-  "level_category_id" varchar,
-  "level_id" varchar
+  "id" uuid PRIMARY KEY,
+  "user_id" uuid,
+  "level_category_id" uuid,
+  "level_id" uuid
 );
 
 CREATE TABLE "schedule" (
-  "id" varchar PRIMARY KEY,
-  "group_id" varchar,
+  "id" uuid PRIMARY KEY,
+  "group_id" text,
   "started" bit,
   "ended" bit,
   "created_at" timestamp
 );
 
 CREATE TABLE "court" (
-  "id" varchar PRIMARY KEY,
-  "number" varchar,
-  "schedule_id" varchar,
+  "id" uuid PRIMARY KEY,
+  "number" text,
+  "schedule_id" uuid,
   "created_at" timestamp
 );
 
 CREATE TABLE "match" (
-  "id" varchar PRIMARY KEY,
-  "court_id" varchar,
+  "id" uuid PRIMARY KEY,
+  "court_id" uuid,
   "ended" bit,
   "created_at" timestamp
 );
 
 CREATE TABLE "partner" (
-  "id" varchar PRIMARY KEY,
-  "match_id" varchar,
+  "id" uuid PRIMARY KEY,
+  "match_id" uuid,
   "score" integer,
   "result" integer,
   "created_at" timestamp
 );
 
 CREATE TABLE "user_partner" (
-  "id" varchar PRIMARY KEY,
-  "user_id" varchar,
-  "partner_id" varchar,
+  "id" uuid PRIMARY KEY,
+  "user_id" uuid,
+  "partner_id" uuid,
   "created_at" timestamp
 );
 
 CREATE TABLE "user_schedule" (
-  "id" varchar PRIMARY KEY,
-  "user_id" varchar,
+  "id" uuid PRIMARY KEY,
+  "user_id" uuid,
   "order" integer,
-  "game_count" varchar,
-  "schedule_id" varchar,
+  "game_count" text,
+  "schedule_id" uuid,
   "created_at" timestamp
 );
 

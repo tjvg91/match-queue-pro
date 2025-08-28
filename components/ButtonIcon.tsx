@@ -1,14 +1,17 @@
 import { Colors } from '@/constants/Colors';
-import React from 'react';
+import React, { JSX } from 'react';
 import { ActivityIndicator, DimensionValue, StyleSheet, TextStyle, TouchableWithoutFeedback, View, ViewStyle } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { isMobileWidth } from '@/app/utils';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
 
-type ButtonProps = {
+type ButtonIconProps = {
   onPress?: () => void;
   disabled?: boolean;
-  type?: 'primary' | 'outline' | 'clear' | 'secondary' | 'white' | 'glow' | 'error' | 'glass';
-  text: string;
+  type?: 'primary' | 'outline' | 'clear' | 'secondary' | 'white' | 'glow' | 'error';
+  text?: string;
+  icon: string | IconProp;
   width?: DimensionValue;
   fontSize?: number;
   textColor?: string;
@@ -19,7 +22,7 @@ type ButtonProps = {
 
 const isMobile = isMobileWidth();
 
-const Button: React.FC<ButtonProps> = ({
+const ButtonIcon: React.FC<ButtonIconProps> = ({
   onPress,
   disabled = false,
   type = 'primary',
@@ -30,6 +33,7 @@ const Button: React.FC<ButtonProps> = ({
   fontSize = isMobile ? 15 : 20,
   textStyle,
   loading = false,
+  icon
 }) => {
   let buttonStyle = styles.primary;
   const [isFocused, setIsFocused] = React.useState(false);
@@ -67,13 +71,17 @@ const Button: React.FC<ButtonProps> = ({
     onPress={onPress}
     disabled={disabled}
   >
-    <View style={[{ width }, buttonStyle, style, disabled && styles.disabled]}>
+    <View style={[styles.container, { width }, buttonStyle, style, disabled && styles.disabled]}>
       {
         loading ? <ActivityIndicator color={buttonStyle.color} size={fontSize} /> : (
-          <ThemedText fontSize={fontSize} color={textColor || buttonStyle.color} style={[
-            { textAlign: 'center', lineHeight: fontSize + 3, letterSpacing: 1.1 },
-            textStyle
-          ]}>{text}</ThemedText>
+          <>
+            <FontAwesomeIcon icon={icon as IconProp} color={textColor || buttonStyle.color} size={fontSize}/>
+            <ThemedText fontSize={fontSize} color={textColor || buttonStyle.color} style={[
+              { textAlign: 'center', lineHeight: fontSize + 3, letterSpacing: 1.1 },
+              textStyle
+            ]}>{text}</ThemedText>
+          </>
+          
         )
       }
       
@@ -82,6 +90,14 @@ const Button: React.FC<ButtonProps> = ({
 )};
 
 const styles = StyleSheet.create({
+  container: {
+    flexDirection:'row',
+    columnGap: 10,
+    alignItems: 'center',
+    marginHorizontal: 10,
+    marginVertical: 5,
+    padding: 10
+  },
   primary: {
     backgroundColor: Colors.primary,
     color: Colors.textColor,
@@ -95,7 +111,7 @@ const styles = StyleSheet.create({
     color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
   },
   clear: {
@@ -103,7 +119,7 @@ const styles = StyleSheet.create({
     color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
   },
   clearFocused: {
@@ -111,7 +127,7 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
   },
   outline: {
@@ -120,7 +136,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: Colors.textColor,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
   },
   outlineFocused: {
@@ -129,7 +145,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: Colors.primary,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
   },
   secondary: {
@@ -137,7 +153,7 @@ const styles = StyleSheet.create({
     color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
   },
   secondaryFocused: {
@@ -145,7 +161,7 @@ const styles = StyleSheet.create({
     color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
   },
   white: {
@@ -153,7 +169,7 @@ const styles = StyleSheet.create({
     color: Colors.darkBlue,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
   },
   whiteFocused: {
@@ -161,7 +177,7 @@ const styles = StyleSheet.create({
     color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
   },
   glow: {
@@ -169,7 +185,7 @@ const styles = StyleSheet.create({
     color: Colors.darkBlue,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
     boxShadow: "1px -1px 10px 7px rgba(102,240,185,0.75);"
   },
@@ -178,7 +194,7 @@ const styles = StyleSheet.create({
     color: Colors.darkBlue,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
     boxShadow: 'none'
   },
@@ -186,8 +202,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.darkRed,
     color: Colors.textColor,
     borderWidth: 0,
+    paddingVertical: 15,
     opacity: 1,
-    paddingVertical: 10,
     borderRadius: 6,
     boxShadow: "none"
   },
@@ -196,7 +212,7 @@ const styles = StyleSheet.create({
     color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 6,
     boxShadow: 'none'
   },
@@ -205,4 +221,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Button;
+export default ButtonIcon;

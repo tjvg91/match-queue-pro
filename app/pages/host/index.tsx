@@ -4,8 +4,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigation } from "@react-navigation/native";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Dimensions, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import z from "zod";
@@ -13,28 +12,33 @@ import HostCourt from "./court";
 import HostQueue from "./queue";
 import uuid from 'react-native-uuid';
 
-import testData from '@/testData.json';
-import { isMobileWidth, isPlayerInCourt, parseDoc } from "@/app/utils";
+import { camelizeKeys, isMobileWidth, isPlayerInCourt } from "@/app/utils";
 import useMQStore from "@/hooks/useStore";
 import { useShallow } from "zustand/shallow";
 import ShuttlecockSVG from "@/components/svg/Shuttlecock";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from "expo-router";
+import { Toast } from "toastify-react-native";
 
 const schema = z.object({
-  groupName: z.string().min(3, { error: "Minimum no. of characters is 3" }).max(20, { error: "Maximum no. of characaters is 20" }),
+  groupName: z.string().min(3, { error: "Minimum no. of characters is 3" }).max(30, { error: "Maximum no. of characaters is 30" }),
 })
 
 const isMobile = isMobileWidth();
 const screenWidth = Dimensions.get('screen').width;
 
 export default function HostHomeScreen() {
-  const { activeGroup, activeSchedule, setActiveGroup, setActiveSchedule } = useMQStore(useShallow(s => ({
+  const { activeGroup, activeSchedule, setActiveGroup, setActiveSchedule, supabase, isLoading, setLoading: setLoading, user } = useMQStore(useShallow(s => ({
     activeGroup: s.activeGroup,
     setActiveGroup: s.setActiveGroup,
     activeSchedule: s.activeSchedule,
-    setActiveSchedule: s.setActiveSchedule
+    setActiveSchedule: s.setActiveSchedule,
+    isLoading: s.isLoading,
+    setLoading: s.setLoading,
+    supabase: s.supabase,
+    user: s.user
   })))
 
   const [isCreate, setIsCreate] = useState(false);
@@ -42,22 +46,55 @@ export default function HostHomeScreen() {
   const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
   });
-  const navigation = useNavigation();
+  const router = useRouter();
   const [isStarted, setIsStarted] = useState(false);
   const [activeTab, setActiveTab] = useState<'queue' | 'court'>('queue');
 
   const insets = useSafeAreaInsets();
 
-  const onCreate = (data: z.infer<typeof schema>) => {
-    setFirstGroup(false);
-    setIsCreate(false);
+  const getActiveGroup = useCallback(async () => {
+    const curGroup = await supabase?.from('group')
+                .select('*, players:user_group(group(*)), schedule(group(*))')
+                .eq('managed_by', user?.id).single()
+    if(curGroup?.data) {
+      setActiveGroup(camelizeKeys(curGroup?.data));
+      setIsCreate(false);
+    }
+  }, [setActiveGroup, supabase, user?.id])
+
+  const onCreate = async (data: z.infer<typeof schema>) => {
+    setLoading(true);
+
+    const res = await supabase?.from('group').insert({
+      id: uuid.v4(),
+      name: data.groupName,
+      managed_by: user?.id,
+    }).select('*, user_group(group(*))').single();
+
+    if(!res?.error) {
+      const res2 = await supabase?.from('user_group').insert({
+        id: uuid.v4(),
+        user_id: user?.id,
+        group_id: res?.data.id
+      });
+
+      if(!res2?.error) {
+        Toast.success("Group created successfully.");
+        getActiveGroup();
+      }
+    }
+
+    setLoading(false);
   }
 
   useEffect(() => {
-    if(!activeGroup) {
-      setActiveGroup?.(parseDoc(testData.group));
-    }
+    getActiveGroup();
   }, [])
+
+  useEffect(() => {
+    setIsCreate(!activeGroup);
+    setFirstGroup(!activeGroup);
+  }, [activeGroup]);
 
   useEffect(() => {
     if(isStarted) {
@@ -121,24 +158,35 @@ export default function HostHomeScreen() {
           control={control}
           name="groupName"
           render={({ field: { onChange, value } }) => {
-            return <TextInput label="Group Name" value={value} onChangeText={onChange} error={errors?.groupName?.message} />;
+            return <TextInput label="Group Name" value={value} onChangeText={onChange} error={errors?.groupName?.message} editable={!isLoading} darkMode />;
           }} />
         <Button
           type="outline"
           text="Create"
+          loading={isLoading}
+          disabled={isLoading}
           style={{ marginTop: 20, paddingVertical: 15 }}
           onPress={handleSubmit(onCreate)} />
       </View>
       {!isCreate && (<Button
         type="clear"
+        disabled={isLoading}
+        loading={isLoading}
         text="I'll create later"
         onPress={() => setIsCreate(false)}/>
         )}
       <Button
         type="clear"
+        disabled={isLoading}
         fontSize={isMobile ? 12 : 16}
         text="I'll just play instead"
-        onPress={() => navigation.navigate('Player')} />
+        onPress={() => router.replace('/pages/player')} />
+      <Button
+        type="clear"
+        disabled={isLoading}
+        fontSize={isMobile ? 12 : 16}
+        text="Go back home"
+        onPress={() => router.back()} />
     </>
   )
 
@@ -149,20 +197,22 @@ export default function HostHomeScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <ThemedText
               type="bold" 
-              fontSize={isMobile ? 30 : 36} 
+              fontSize={isMobile ? 23 : 28} 
               style={{ marginTop: isMobile ? 15 : 30, marginBottom: 50 }}>
-              Shuttle Stars
+              {activeGroup?.name}
             </ThemedText>
-            <FontAwesomeIcon
+            {/*<FontAwesomeIcon
               icon="refresh"
               size={isMobile ? 14 : 18}
               color={Colors.gradientStopperLight}
-              style={{ marginLeft: 15, marginTop: isMobile ? -35 : -30 }}/>
+              style={{ marginLeft: 15, marginTop: isMobile ? -35 : -30 }}/>*/}
           </View>
           
           <Button
             text="HOST NOW" 
             textColor={Colors.darkBlue}
+            loading={isLoading}
+            disabled={isLoading}
             type="glow"
             onPress={() => setIsStarted(true)}
             fontSize={isMobile ? 15 : 20}
@@ -172,8 +222,15 @@ export default function HostHomeScreen() {
           type="clear"
           style={{ marginTop: 20 }}
           text="I'll just play instead"
+          disabled={isLoading}
           fontSize={isMobile ? 12 : 20}
-          onPress={() => navigation.navigate('Player')} />
+          onPress={() => router.replace('/pages/player')} />
+        <Button
+          type="clear"
+          fontSize={isMobile ? 12 : 16}
+          text="Go back home"
+          disabled={isLoading}
+          onPress={() => router.back()} />
       </>
     )
   }
@@ -269,7 +326,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 20,
     width: '80%',
-    maxWidth: 580
+    maxWidth: 580,
+    marginTop: -80
   },
   homeContainer: {
     flexDirection: 'column',

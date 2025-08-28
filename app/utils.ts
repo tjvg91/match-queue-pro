@@ -1,7 +1,20 @@
 import { Colors } from "@/constants/Colors";
 import { Court, Group, Match, User } from "@/constants/types";
+import { ParamListBase, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationOptions, NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Dimensions } from "react-native";
+import { camelCase } from 'lodash';
 import uuid from 'react-native-uuid';
+
+
+export const screenOptions : NativeStackNavigationOptions | ((props: {
+    route: RouteProp<ParamListBase, string>;
+    navigation: NativeStackNavigationProp<ParamListBase, string, undefined>;
+    theme: ReactNavigation.Theme;
+}) => NativeStackNavigationOptions) = {
+  headerStyle: { backgroundColor: 'transparent' },
+  headerShown: false
+}
 
 export function cssStringToObject(css: string): Record<string, string> {
   const result: Record<string, string> = {};
@@ -110,3 +123,18 @@ export function isPlayerInSchedule(group: Group, userId: string) {
   return !group.schedules.find(sched => !sched.ended)!.players?.some(qp => qp.id === userId)
   
 }
+
+export function camelizeKeys(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(v => camelizeKeys(v));
+  } else if (obj != null && obj.constructor === Object) {
+    return Object.keys(obj).reduce(
+      (result, key) => ({
+        ...result,
+        [camelCase(key)]: camelizeKeys(obj[key]),
+      }),
+      {},
+    );
+  }
+  return obj;
+};

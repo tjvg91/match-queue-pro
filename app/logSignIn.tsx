@@ -3,7 +3,7 @@ import TextInput from '@/components/Input';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useEffect, useState } from 'react';
-import { Modal, StyleSheet, Switch, TouchableOpacity, View, Dimensions } from 'react-native';
+import { StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from 'react-hook-form';
@@ -12,8 +12,10 @@ import { CommonActions, useNavigation } from '@react-navigation/native';
 import { useShallow } from 'zustand/shallow';
 import useMQStore from '@/hooks/useStore';
 import Dialog from '@/components/Dialog';
-import testData from '@/testData.json';
-import { parseDoc } from './utils';
+import uuid from 'react-native-uuid';
+import { AuthResponse, User as SupUser } from '@supabase/supabase-js';
+import { ToastType, User } from '@/constants/types';
+import { PlayerDetails } from '@/components/PlayerDetails';
 
 const schema = z.object({
   username: z.string().optional(),
@@ -35,7 +37,6 @@ const schema = z.object({
     return !!data.email && !!data.password;
   
 }).superRefine((data, ctx) => {
-  console.log(data);
   if(!data.email) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -88,7 +89,6 @@ const schema = z.object({
       }
     }
   }
-  console.log("Validation successful");
 });
 
 export default function LogSignScreen() {
@@ -98,25 +98,90 @@ export default function LogSignScreen() {
   const [isForgotPassword, setIsForgotPassword] = useState(watch("isForgotPassword") || false);
   const [hasAccount, setHasAccount] = useState(!watch("isNew"));
   const [hasPlayerCode, setHasPlayerCode] = useState(watch("hasPlayerCode"));
-  const navigation = useNavigation();
+  const [toastMessage, setToastMessage] = useState<{ message: string, type: ToastType }>({
+    message: "",
+    type: "success"
+  });
+  const [moreDetailsMode, setMoreDetailsMode] = useState(false);
+  const [userId, setUserId] = useState("");
 
-  const { setIsAuthenticated, setUser } = useMQStore(useShallow((s) => ({
+  const navigation = useNavigation();
+  const username = watch("username");
+
+  const { setIsAuthenticated, setUser, supabase, isLoading, setLoading } = useMQStore(useShallow((s) => ({
     setUser: s.setUser,
-    setIsAuthenticated: s.setIsAuthenticated
+    setIsAuthenticated: s.setIsAuthenticated,
+    supabase: s.supabase,
+    isLoading: s.isLoading,
+    setLoading: s.setLoading
   })))
 
-  const onSubmit = (data: z.infer<typeof schema>) => {
-    console.log(hasAccount ? "Logging in with data:" : "Signing up with data:", data);
-    // Handle login logic here, e.g., call an API or Firebase auth
-    reset();
-    setUser?.(parseDoc(testData.user))
-    setIsAuthenticated(true);
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: "Home" }]
+  const userQueryBuilder = supabase?.from('user').select('*');
+
+  const onSubmit = ({ email, password, playerCode }: z.infer<typeof schema>) => {
+    setLoading(true);
+    if(hasAccount) {
+      supabase?.auth.signInWithPassword({ email, password })
+        .then(async (res) => {
+          if(!res.error) {
+            const data = await userQueryBuilder?.eq('email', email).single<User>();
+            console.log("user " + JSON.stringify(data));
+            if(data?.data) {
+              setUser?.(data.data);
+              setIsAuthenticated(true);
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: "Home" }]
+                })
+              )
+              reset();
+            }
+          }
+          else {
+            setToastMessage({
+              message: res.error.message,
+              type: "error"
+            })
+            setLoading(false);
+          }
+        })
+        .catch(console.log);
+    } else {
+      const userId = uuid.v4();
+      supabase?.auth.signUp({ email, password,
+        options: {
+          data: {
+            playerCode: hasPlayerCode ? playerCode : userId
+          },
+          emailRedirectTo: "matchqueuepro://"
+        },
+      }).then(async (res: AuthResponse) => {
+        if(res.data.user) {
+          setToastMessage({
+            message: "Confirmation email sent. Please check your inbox and confirm to log in.",
+            type: "success"
+          })
+          setUserId(res.data.user.id);
+          const res2 = await supabase?.from('user').insert({
+            id: res.data.user.id,
+            email,
+            username,
+            password,
+            player_code: playerCode || res.data.user.id
+          }).select('*');
+          console.log(res2);
+
+          setLoading(false);
+
+          if(!res2.error)
+            setMoreDetailsMode(true);
+        }
+        
+      }).catch(err => {
+        console.log("error " + JSON.stringify(err));
       })
-    )
+    }
   }
 
   const onForgotPassword = ({email} : z.infer<typeof schema>) => {
@@ -150,15 +215,19 @@ export default function LogSignScreen() {
     });
   }, [isForgotPassword]);
 
+  useEffect(() => {
+    setLoading(false);
+  }, [])
+
   const loginComp = () => {
     return (
       <>
         <ThemedText
-        fontSize={35}
+          fontSize={35}
           style={{ overflow: "visible", transform: "translateY(-10px)", lineHeight: 40 }}
           type="bold">
-            Log In
-          </ThemedText>
+          Log In
+        </ThemedText>
 
         <View style={{ marginTop: 50, width: '100%' }}>
           <Controller
@@ -168,12 +237,13 @@ export default function LogSignScreen() {
               <TextInput
                 label="Email"
                 value={value}
+                autoCapitalize="none"
                 onChangeText={onChange}
                 error={errors.email?.message}
                 keyboardType="email-address"
+                editable={!isLoading}
               />
             )}
-            
           />
 
           <Controller
@@ -186,10 +256,11 @@ export default function LogSignScreen() {
                 value={value}
                 onChangeText={onChange}
                 error={errors.password?.message}
+                editable={!isLoading}
               />
             )}
           />
-          <TouchableOpacity onPress={() => setIsForgotPassword(true)}>
+          <TouchableOpacity onPress={() => setIsForgotPassword(true)} disabled={isLoading}>
             <ThemedText
               fontSize={11}
               color={Colors.label}
@@ -207,10 +278,12 @@ export default function LogSignScreen() {
           <Button
             text="Log In"
             type="outline"
+            disabled={isLoading}
+            loading={isLoading}
             onPress={handleSubmit(onSubmit)}
             fontSize={20}
-            style={{ marginTop: 35, letterSpacing: 1.5 }} />
-          <TouchableOpacity onPress={() => { setHasAccount(false); setHasPlayerCode(false);}}>
+            style={{ marginTop: 35 }} />
+          <TouchableOpacity onPress={() => { setHasAccount(false); setHasPlayerCode(false);}} disabled={isLoading}>
             <ThemedText
               fontSize={14}
               style={{
@@ -221,7 +294,7 @@ export default function LogSignScreen() {
               I don&apos;t have an account
             </ThemedText>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { setHasAccount(false); setHasPlayerCode(true); }}>
+          <TouchableOpacity onPress={() => { setHasAccount(false); setHasPlayerCode(true); }} disabled={isLoading}>
             <ThemedText
             fontSize={14}
               style={{
@@ -229,7 +302,7 @@ export default function LogSignScreen() {
                 marginTop: 15,
                 fontWeight: 300
               }}>
-              I want to claim my player code
+              I&apos;ll claim my account by player code
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -247,9 +320,9 @@ export default function LogSignScreen() {
           Sign Up
         </ThemedText>
 
-        <View style={{ marginTop: 10, width: '100%' }}>
+        <View style={{ marginTop: 50, width: '100%' }}>
 
-          {hasPlayerCode && <ToastMessage type="info" message="Ask for player code to claim your account." showClose={false} /> }
+          {hasPlayerCode && <ToastMessage type="info" message="Ask for player code from a group manager to claim your account." showClose={false} /> }
 
           <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
             <ThemedText fontSize={16} style={{ marginRight: 5 }}>Player Code</ThemedText>
@@ -258,6 +331,7 @@ export default function LogSignScreen() {
               onValueChange={setHasPlayerCode}
               trackColor={{ false: Colors.darkBlue, true: Colors.green }}
               thumbColor={Colors.textColor}
+              disabled={isLoading}
             />
           </View>
           
@@ -271,6 +345,7 @@ export default function LogSignScreen() {
                   value={value}
                   onChangeText={onChange}
                   error={errors.playerCode?.message}
+                  editable={!isLoading}
                 />
               )}
             />
@@ -284,6 +359,7 @@ export default function LogSignScreen() {
                   value={value}
                   onChangeText={onChange}
                   error={errors.username?.message}
+                  editable={!isLoading}
                 />
               )}
             />
@@ -299,6 +375,7 @@ export default function LogSignScreen() {
                 onChangeText={onChange}
                 error={errors.email?.message}
                 keyboardType="email-address"
+                editable={!isLoading}
               />
             )}
           />
@@ -312,6 +389,7 @@ export default function LogSignScreen() {
                 isPassword={true}
                 value={value}
                 onChangeText={onChange}
+                editable={!isLoading}
                 //@ts-ignore
                 error={errors.password?.message || errors.confirmPassword?.password?.message}
               />
@@ -327,6 +405,7 @@ export default function LogSignScreen() {
                 isPassword={true}
                 value={value}
                 onChangeText={onChange}
+                editable={!isLoading}
                 //@ts-ignore
                 error={errors.confirmPassword?.message ?? errors.confirmPassword?.password?.message}
               />
@@ -339,8 +418,10 @@ export default function LogSignScreen() {
             text="Sign Up"
             type="outline"
             onPress={handleSubmit(onSubmit)}
-            style={{ marginTop: 35, letterSpacing: 1.5 }} />
-          <TouchableOpacity onPress={() => setHasAccount(true)}>
+            disabled={isLoading}
+            loading={isLoading}
+            style={{ marginTop: 35}} />
+          <TouchableOpacity onPress={() => setHasAccount(true)} disabled={isLoading}>
             <ThemedText
               fontSize={15}
               style={{
@@ -356,6 +437,13 @@ export default function LogSignScreen() {
     )
   }
 
+  const detailsComp = () => {
+    return <PlayerDetails username={username} userId={userId} onSuccess={() => {
+      setMoreDetailsMode(false);
+      setHasAccount(true);
+    }}/>
+  }
+
   return (
     <View style={styles.container}>
       <Dialog
@@ -364,6 +452,7 @@ export default function LogSignScreen() {
           <TextInput
             label="Enter email"
             value={watch("email")}
+            style={{ width: '100%' }}
             onChangeText={(text) => setValue("email", text, { shouldValidate: true })}
             error={errors.email?.message}
             darkMode={false}
@@ -372,17 +461,31 @@ export default function LogSignScreen() {
           <Button
             text="Continue"
             type="primary"
+            loading={isLoading}
+            disabled={isLoading}
             onPress={handleSubmit(onForgotPassword)}
-            style={{ marginTop: 20, letterSpacing: 1.5 }} />
-            <Button
+            style={{ marginTop: 20 }} />
+          <Button
             text="Cancel"
             type="secondary"
+            loading={isLoading}
+            disabled={isLoading}
             onPress={() => setIsForgotPassword(false)}
-            style={{ marginTop: 20, letterSpacing: 1.5 }} />
+            style={{ marginTop: 20 }} />
       </Dialog>
       <View style={styles.subContainer}>
+        <ToastMessage
+          message={toastMessage.message}
+          type={toastMessage.type}
+          onClose={() => {
+            setToastMessage({
+              message: "",
+              type: "success"
+            })
+          }}
+        />
         <ThemedText fontSize={25} style={{ marginBottom: 10 }} type="extraLight">Welcome!</ThemedText>
-        {hasAccount ? loginComp() : signupComp()}
+        {moreDetailsMode ? detailsComp() : hasAccount ? loginComp() : signupComp()}
       </View>
     </View>
   );
