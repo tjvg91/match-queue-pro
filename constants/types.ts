@@ -42,7 +42,7 @@ export interface MQStore {
   setUser: (user?: User) => void;
   clearUser?: () => void;
   setActiveGroup: (group?: Group) => void
-  setActiveSchedule: (schedule: Schedule) => void
+  setActiveSchedule: (schedule?: Schedule) => void
   setSupabase: (client: SupabaseClient<any, "public", any>) => void
   setLoading: (loading: boolean) => void
 }
@@ -57,6 +57,7 @@ export interface Partner {
 
 export interface Match {
   id: string;
+  startedAt?: Date;
   ended?: boolean;
   partners?: Partner[];
   createdAt: Date;
@@ -65,15 +66,17 @@ export interface Match {
 export interface Court {
   id: string;
   number?: string;
-  match?: Match[];
+  matches?: Match[];
   createdAt: Date;
 }
 
 export interface Schedule {
   id: string;
-  ended?: boolean;
+  endedAt?: Date;
   players?: User[];
   courts?: Court[];
+  group: Group;
+  createdAt: Date;
 }
 
 export interface Group {
@@ -82,6 +85,7 @@ export interface Group {
   levelCategory: LevelCategory;
   schedules: Schedule[];
   players: User[];
+  managedBy: string | User;
   lastPlayed: Date;
   createdAt: Date;
 }

@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import Button from './Button';
 import uuid from 'react-native-uuid';
+import { fetchColorByLevel } from '@/app/utils';
 
 const playerDetailsSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -21,30 +22,36 @@ const playerDetailsSchema = z.object({
   }),
   level: z.string().min(1, 'Level must be at least 1'),
   isFull: z.boolean().default(false),
-  email: z.email().nullable(),
+  hideEmail: z.boolean().default(false),
+  email: z.email().optional().default(''),
 }).refine(data => {
-  if(data.isFull) {
+  if(data.isFull || !data.hideEmail) {
     return !!data.email
   }
   return true;
+}, {
+  message: "Email is required",
+  path: ["email"],  // attach error to email field
 });
 
 type Props = {
   existingUser: User | null
   userId?: string
   isFull?: boolean
-  onSuccess: () => void
+  hideEmail?: boolean
+  onSuccess: (details: z.infer<typeof playerDetailsSchema>) => void
 }
 
-export const PlayerDetails: React.FC<Props> = ({ existingUser = null, userId, isFull = false, onSuccess }) => {
-  const { control, handleSubmit, setValue, formState: { errors }} = useForm({
+export const PlayerDetails: React.FC<Props> = ({ existingUser = null, userId, isFull = false, hideEmail = false, onSuccess }) => {
+  const { control, handleSubmit, setValue, formState: { errors }, getValues} = useForm({
     resolver: zodResolver(playerDetailsSchema),
     defaultValues: {
       username: existingUser?.username,
       sex: existingUser?.sex,
       level: existingUser?.level?.id,
       email: existingUser?.email,
-      isFull
+      isFull,
+      hideEmail
     }
   });
   const { supabase, isLoading, setLoading } = useMQStore(useShallow(s => ({
@@ -56,23 +63,24 @@ export const PlayerDetails: React.FC<Props> = ({ existingUser = null, userId, is
   const [options, setOptions] = useState<Option[]>([]);
 
   const onSubmit = async ({sex, level}: z.infer<typeof playerDetailsSchema>) => {
+    if(hideEmail) {
+      onSuccess(getValues());
+      return
+    }
     setLoading(true);
     if(userId) {  
       const res = await supabase?.from('user').update({ sex: sex, player_code: userId }).eq('id', userId).select('*');
-      console.log(res?.data);
       if(!res?.error) {
         const userLevel = (await supabase?.from('user_level').select().eq('user_id', userId).single())?.data;
         if(userLevel) {
           const res2 = await supabase?.from('user_level').update({ level_id: level }).eq('user_id', userId);
-          console.log(res2);
           if(!res2?.error) {
-            onSuccess();
+            onSuccess(getValues());
           }
         } else {
           const res2 = await supabase?.from('user_level').insert({ id: uuid.v4(), user_id: userId, level_id: level });
-          console.log(res2);
           if(!res2?.error) {
-            onSuccess();
+            onSuccess(getValues());
           }
         }
         
@@ -82,7 +90,7 @@ export const PlayerDetails: React.FC<Props> = ({ existingUser = null, userId, is
       if(!res?.error) {
         const res2 = await supabase?.from('user_level').insert({ id: uuid.v4(), user_id: userId, level_id: level });
         if(!res2?.error) {
-          onSuccess();
+          onSuccess(getValues());
         }
       }
     }
@@ -132,22 +140,27 @@ export const PlayerDetails: React.FC<Props> = ({ existingUser = null, userId, is
             />
           )}/>
       </View>
-
-      <View style={styles.subContainer}>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, value} }) => (
-            <TextInput
-              label="email"
-              style={styles.input}
-              value={value || ""}
-              editable={!existingUser?.username && !isLoading}
-              onChangeText={onChange}
-              error={errors.email?.message}
-            />
-          )}/>
-      </View>
+      
+      {
+        !hideEmail && (
+          <View style={styles.subContainer}>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, value} }) => (
+                <TextInput
+                  label="email"
+                  style={styles.input}
+                  value={value || ""}
+                  editable={!existingUser?.username && !isLoading}
+                  onChangeText={onChange}
+                  error={errors.email?.message}
+                />
+              )}/>
+          </View>
+        )
+      }
+      
       
       <View style={styles.subContainer}>
         <ThemedText>Sex</ThemedText>
@@ -184,10 +197,12 @@ export const PlayerDetails: React.FC<Props> = ({ existingUser = null, userId, is
               onValueChange={onChange}
               placeholder="Select level"
               mode="dialog"
-              enabled={!isLoading}
-              selectionColor={Colors.blue}>
+              enabled={!isLoading}>
               {
-                options.map(opt => <Picker.Item key={opt.value} label={opt.label} value={opt.value} color={Colors.textColor} />)
+                options.map(opt => {
+                  const color = fetchColorByLevel(opt.label);
+                  return <Picker.Item key={opt.value} label={opt.label} value={opt.value} color={color.bgColor}/>
+                })
               }
             </Picker>
           )}

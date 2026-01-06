@@ -1,14 +1,14 @@
-import { ThemeProvider, useNavigation, } from '@react-navigation/native';
+import { ParamListBase, RouteProp, ThemeProvider, useNavigation, } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 
+import { GestureHandlerRootView, Pressable } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/Colors';
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import useMQStore from '@/hooks/useStore';
 import { useShallow } from 'zustand/shallow';
 import ToastMessage from '@/components/ToastMessage';
-import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { faUser } from '@fortawesome/free-solid-svg-icons/faUser'
 import { ThemedText } from '@/components/ThemedText';
 import { PortalHost } from '@rn-primitives/portal';
@@ -29,8 +29,9 @@ import { faSquare } from '@fortawesome/free-regular-svg-icons/faSquare'
 import { faChartLine } from '@fortawesome/free-solid-svg-icons/faChartLine'
 import { faUsers } from '@fortawesome/free-solid-svg-icons/faUsers'
 import { faArrowRightFromBracket } from '@fortawesome/free-solid-svg-icons/faArrowRightFromBracket'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons/faInfoCircle'
+import { faPlay } from '@fortawesome/free-solid-svg-icons/faPlay'
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { GestureHandlerRootView, Pressable } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Dialog from '@/components/Dialog';
 import { useCallback, useState } from 'react';
@@ -42,12 +43,14 @@ import SwipeButton from 'rn-swipe-button';
 import Hr from '@/components/ui/hr';
 import { Stack, useRouter } from 'expo-router';
 import ToastManager from 'toastify-react-native'
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { DropProvider } from "react-native-reanimated-dnd";
 
 
 library.add(
-  faRefresh, faClockRotateLeft, faCaretRight, faCaretDown,faUserGroup, faPlusCircle, faChevronRight, faX,
+  faRefresh, faClockRotateLeft, faCaretRight, faCaretDown, faUserGroup, faPlusCircle, faChevronRight, faX,
   faChevronUp, faChevronDown, faCheck, faUser, faCheckSquare, faSquare, faChartLine, faArrowRightFromBracket,
-  faUsers
+  faUsers, faInfoCircle, faPlay
 )
 
 const supabase = createClient(SUPABASE_URL || "", SUPABASE_AUTH_KEY || "", {
@@ -83,13 +86,13 @@ export default function RootLayout() {
   });
 
   const { user, setUser, errorMessages, clearErrorMessages, setSupabase, setIsAuthenticated } = useMQStore(useShallow((state) => ({
-      user: state.user,
-      setUser: state.setUser,
-      errorMessages: state.errorMessages,
-      clearErrorMessages: state.clearErrorMessages,
-      setSupabase: state.setSupabase,
-      setIsAuthenticated: state.setIsAuthenticated,
-    }
+    user: state.user,
+    setUser: state.setUser,
+    errorMessages: state.errorMessages,
+    clearErrorMessages: state.clearErrorMessages,
+    setSupabase: state.setSupabase,
+    setIsAuthenticated: state.setIsAuthenticated,
+  }
   )));
 
   const [isUserDialogShown, showUserDialog] = useState(false);
@@ -101,9 +104,9 @@ export default function RootLayout() {
       showClose
       visible={isUserDialogShown}
       style={{ paddingLeft: 10, marginRight: -10 }}
-      onRequestClose={() => { navigation.goBack(); showUserDialog(false); }} width={'70%'}>
+      onRequestClose={() => showUserDialog(false)} width={'70%'}>
       <ButtonIcon
-        text="Profile" 
+        text="Profile"
         icon={"user"}
         type="secondary"
         fontSize={16}
@@ -118,28 +121,36 @@ export default function RootLayout() {
         icon={"chart-line"}
         type="secondary"
         style={{ justifyContent: 'center' }}
-        fontSize={16}/>
+        fontSize={16}
+        onPress={() => {
+          router.push('/pages/user/stats');
+          showUserDialog(false);
+        }} />
       <ButtonIcon
         text="Groups"
         icon={"users"}
         type="secondary"
         style={{ justifyContent: 'center' }}
-        fontSize={16}/>
-      <Hr color={Colors.darkGray} style={{ marginVertical: 30, width: '100%', marginLeft: '2.5%' }}/>
+        fontSize={16}
+        onPress={() => {
+          router.push('/pages/user/groups');
+          showUserDialog(false);
+        }} />
+      <Hr color={Colors.darkGray} style={{ marginVertical: 30, width: '100%', marginLeft: '2.5%' }} />
       <SwipeButton
         finishRemainingSwipeAnimationDuration={500}
         railBackgroundColor={Colors.darkRed}
         railFillBackgroundColor={Colors.red}
         railFillBorderColor={'transparent'}
         railBorderColor={'transparent'}
-        thumbIconComponent={() => <FontAwesomeIcon icon="arrow-right-from-bracket" color={Colors.darkRed}/>}
+        thumbIconComponent={() => <FontAwesomeIcon icon="arrow-right-from-bracket" color={Colors.darkRed} />}
         thumbIconBackgroundColor={Colors.textColor}
         thumbIconBorderColor={'transparent'}
         titleColor={Colors.textColor}
         titleStyles={{ letterSpacing: 1.1, fontFamily: "SourceSans" }}
         title="Sign Out"
         width={'100%'}
-        onSwipeSuccess={() => { setIsAuthenticated(false); setUser?.(undefined); showUserDialog(false); }}/>
+        onSwipeSuccess={() => { setIsAuthenticated(false); setUser?.(undefined); showUserDialog(false); }} />
     </Dialog>
   ), [navigation, isUserDialogShown]);
 
@@ -167,67 +178,81 @@ export default function RootLayout() {
     },
     dark: true
   }
+  const headerRightRegex = /logSignIn|home|index/i;
 
-  const headerOptions: NativeStackNavigationOptions = {
-    headerRight: () => (
-      <>
-        <View style={styles.header}>
-          <ThemedText
-            type="bold"
-            color={Colors.textColor}
-            fontSize={20}
-            style={{ width: "auto", marginRight: 20 }}
-          >
-            {user?.username}
-          </ThemedText>
-          <Pressable onPress={() => {
-            showUserDialog(true);
-          }}>
-            <FontAwesomeIcon icon="user" size={20} color={Colors.textColor}/>
-          </Pressable>
-        </View>
-      </>
-      
+  const headerOptions = (user: any, showUserDialog: (v: boolean) => void, route: RouteProp<ParamListBase, string>) => ({
+    headerRight: () => !headerRightRegex.test(route.name) && (
+      <View style={styles.header}>
+        <ThemedText
+          type="bold"
+          color={Colors.textColor}
+          fontSize={20}
+          style={{ width: "auto", marginRight: 10, transform: "translateY(2px)" }}
+        >
+          {user?.username}
+        </ThemedText>
+        <Pressable onPress={() => {
+          showUserDialog(true);
+        }}>
+          <FontAwesomeIcon icon="user" size={20} color={Colors.textColor} />
+        </Pressable>
+      </View>
     ),
     headerTitle: "",
-    headerBackground: () => 'transparent'    
-  }
+    headerShown: !/host/.test(route.name),
+    headerLeft: () => !headerRightRegex.test(route.name) && router.canGoBack() && (
+      <Pressable onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={20} color={Colors.textColor} />
+      </Pressable>
+    ),
+    headerBackground: () => <View style={{ flex: 1, backgroundColor: "transparent" }} />
+  })
 
   const renderScreens = () => {
     return (
       <>
-        <Stack.Screen name="./pages/user" options={{ headerShown: false, header: () => null }}/>
-        <Stack.Screen name="index" options={{ headerShown: false, header: () => null  }}/>
-        <Stack.Screen name="./logSignIn" options={{ headerShown: false, animation: "fade" }}/>
-        <Stack.Screen name="./pages/home" options={{...headerOptions, animation: "fade"}}/>
-        <Stack.Screen name="./+not-found" options={headerOptions}/>
+        <Stack.Screen name="index" />
+
+        <Stack.Screen name="./pages/user" />
+        <Stack.Screen name="./logSignIn" />
+        <Stack.Screen name="./pages/home" />
+        <Stack.Screen name="./pages/user/groups" />
+        <Stack.Screen name="./pages/user/stats" />
+        <Stack.Screen name="./pages/host" />
+
+        <Stack.Screen name="./+not-found" />
       </>
     )
   }
 
-  return (        
+  return (
     <GestureHandlerRootView>
-      <ThemeProvider value={theme}>
-        <SafeAreaProvider>
-          <LinearGradient
-            colors={[Colors.green, Colors.gradientStopper, Colors.primary]}
-            locations={[0, 0.34, 1]}
-            start={{ x: 1, y: 1 }}
-            end={{ x: 0, y: 0 }}
-            style={[StyleSheet.absoluteFill, { paddingTop: 0 }]}>
-            {!!errorMessages?.length && (
-              <ToastMessage message={errorMessages?.join("\n")} type="error" showClose onClose={() => clearErrorMessages?.()} />
-            )}
-              <Stack screenOptions={headerOptions}>
+      <DropProvider>
+        <ThemeProvider value={theme}>
+          <SafeAreaProvider>
+            <LinearGradient
+              colors={[Colors.green, Colors.gradientStopper, Colors.primary]}
+              locations={[0, 0.34, 1]}
+              start={{ x: 1, y: 1 }}
+              end={{ x: 0, y: 0 }}
+              style={[StyleSheet.absoluteFill, { paddingTop: 0 }]}>
+              {!!errorMessages?.length && (
+                <ToastMessage message={errorMessages?.join("\n")} type="error" showClose onClose={() => clearErrorMessages?.()} />
+              )}
+              <Stack screenOptions={({ route }) => ({
+                ...headerOptions(user, showUserDialog, route),
+              })}>
+
                 {renderScreens()}
               </Stack>
               {renderUserDialog()}
-            <StatusBar style="auto" />
-          </LinearGradient>
-        </SafeAreaProvider>
-        <PortalHost />
-        <ToastManager showProgressBar={false} theme="dark" textStyle={{ fontFamily: 'SourceSans' }} position={'bottom'}/>
-      </ThemeProvider>
+              <StatusBar style="auto" />
+            </LinearGradient>
+          </SafeAreaProvider>
+          <PortalHost />
+          <ToastManager showProgressBar={false} theme="dark" textStyle={{ fontFamily: 'SourceSans' }} position={'bottom'} />
+        </ThemeProvider>
+      </DropProvider>
     </GestureHandlerRootView>
   );
 }

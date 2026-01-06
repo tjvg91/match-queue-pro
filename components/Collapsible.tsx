@@ -1,40 +1,39 @@
-import { PropsWithChildren, useState } from 'react';
-import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { JSX, PropsWithChildren } from 'react';
+import { StyleSheet, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Collapsible } from 'react-native-fast-collapsible';
 
-interface Props
-{
+type Props = {
   title: string
-  style: ViewStyle
+  style?: ViewStyle
+  isVisible: boolean,
+  headerRight?: JSX.Element
+  setVisible: (visible: boolean) => void
 }
 
-export function Collapsible({ children, title, style }: Props & PropsWithChildren ) {
-  const [isOpen, setIsOpen] = useState(false);
-  const theme = useColorScheme() ?? 'light';
+export function MQCollapsible({ children, title, isVisible, headerRight, setVisible }: Props & PropsWithChildren ) {
 
   return (
-    <ThemedView style={{ height: 'auto', ...style }}>
-      <TouchableOpacity
-        style={styles.heading}
-        onPress={() => setIsOpen((value) => !value)}
-        activeOpacity={0.8}>
-        <IconSymbol
-          name="chevron.right"
-          size={18}
-          weight="medium"
-          color={theme === 'light' ? Colors.light.icon : Colors.dark.icon}
-          style={{ transform: [{ rotate: isOpen ? '90deg' : '0deg' }] }}
-        />
+    <View style={{ width: '100%', flexDirection: 'column', flex: 1, flexGrow: 1, marginTop: 15, marginBottom: 10 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center', columnGap: 5, marginTop: -7.5 }}
+          onPress={() => setVisible(!isVisible)}>
+          <FontAwesomeIcon
+            icon={!isVisible ? "caret-right" : "caret-down"}
+            size={15}
+            style={{ marginTop: -5 }}
+            color={Colors.gradientStopperLight} />
+          <ThemedText fontSize={14}>{title}</ThemedText>
+        </TouchableOpacity>
+        {headerRight}
+      </View>
 
-        <ThemedText type="semiBold">{title}</ThemedText>
-      </TouchableOpacity>
-      {isOpen && <ThemedView style={styles.content}>{children}</ThemedView>}
-    </ThemedView>
+      <Collapsible isVisible={isVisible}>{children}</Collapsible>
+    </View>
   );
 }
 

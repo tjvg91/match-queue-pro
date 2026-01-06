@@ -3,7 +3,9 @@ import CourtComponent from "@/components/Court";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { Court } from "@/constants/types";
+import { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { Droppable } from "react-native-reanimated-dnd";
 
 interface Props {
   courts?: Court[],
@@ -16,15 +18,18 @@ export default function HostCourt({
   courts,
   onAddCourt
 }: Props) {
+  const viewRef = useRef(null);
+  const [width, setWidth] = useState(0);
+
   return (
-    <View style={styles.court}>
+    <View style={styles.court} onLayout={ev => setWidth(ev.nativeEvent.layout.width)}>
       <ThemedText color={Colors.gradientStopperLight} style={{ marginBottom: -20 }}>Now Playing</ThemedText>
       {
         courts?.map(court => (
-          <CourtComponent key={court.id} width={'100%'} court={court} />
+          <CourtComponent key={court.id} width={width} court={court} />
         ))
       }
-      <CourtComponent width={'100%'} mode="PLACEHOLDER" onAddCourt={() => onAddCourt?.()}/>
+      <CourtComponent width={width} mode="PLACEHOLDER" onAddCourt={() => onAddCourt?.()}/>
     </View>
   )
 }

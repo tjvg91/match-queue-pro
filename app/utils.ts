@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/Colors";
-import { Court, Group, Match, User } from "@/constants/types";
+import { Court, Group, Match, Schedule, User } from "@/constants/types";
 import { ParamListBase, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationOptions, NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Dimensions } from "react-native";
@@ -38,8 +38,8 @@ export function parseDoc<T>(object: any): T {
 }
 
 export function fetchColorByLevel(name: string) {
-  switch(name) {
-    case "advanced":
+  switch(name?.toLowerCase()) {
+    case "expert":
       return {
         bgColor: Colors.red,
         fgColor: Colors.darkRed
@@ -63,64 +63,64 @@ export function isNullOrEmpty(arr?: any[]) {
 }
 
 export function isPlayerInCourt(court: Court, player: User) {
-  return court.match?.some(match => match.partners?.some(partner => partner?.users?.some(user => user.id === player.id)))
+  return court.matches?.some(match => match.partners?.some(partner => partner?.users?.some(user => user.id === player.id)))
 }
 
 export function queuePlayer(court: Court, user: User) {
   const tempCourt = {...court};
 
-  if(isNullOrEmpty(tempCourt.match)) {
+  if(isNullOrEmpty(tempCourt.matches)) {
     const match: Match = {
       id: uuid.v4(),
       partners: [],
       ended: false,
       createdAt: new Date()
     }
-    tempCourt.match = [];
-    tempCourt.match.push(match);
+    tempCourt.matches = [];
+    tempCourt.matches.push(match);
   }
-  const lastMatchIndex = (tempCourt.match?.length || 1) - 1;
+  const lastMatchIndex = (tempCourt.matches?.length || 1) - 1;
 
-  if(isNullOrEmpty(tempCourt.match![lastMatchIndex].partners))
-    tempCourt.match![lastMatchIndex].partners = [];
-  if(tempCourt.match![lastMatchIndex].partners!.length < 3) {
+  if(isNullOrEmpty(tempCourt.matches![lastMatchIndex].partners))
+    tempCourt.matches![lastMatchIndex].partners = [];
+  if(tempCourt.matches![lastMatchIndex].partners!.length < 3) {
     //let lastPartnersIndex = (tempCourt!.match![lastMatchIndex].partners?.length || 1) - 1;
     let lastPartnersIndex = 0;
     
-    if(tempCourt.match![lastMatchIndex].partners!.length > 0) {
-        lastPartnersIndex = (tempCourt!.match![lastMatchIndex].partners?.findIndex(part => (part.users?.length || 0) < 2)) || 0;
+    if(tempCourt.matches![lastMatchIndex].partners!.length > 0) {
+        lastPartnersIndex = (tempCourt!.matches![lastMatchIndex].partners?.findIndex(part => (part.users?.length || 0) < 2)) || 0;
         if(lastPartnersIndex === -1)
-          lastPartnersIndex = (tempCourt!.match![lastMatchIndex].partners?.length || 1) - 1;
+          lastPartnersIndex = (tempCourt!.matches![lastMatchIndex].partners?.length || 1) - 1;
     }
 
-    if(tempCourt.match![lastMatchIndex].partners![lastPartnersIndex] == null) {
-      tempCourt.match![lastMatchIndex].partners![lastPartnersIndex] = {
+    if(tempCourt.matches![lastMatchIndex].partners![lastPartnersIndex] == null) {
+      tempCourt.matches![lastMatchIndex].partners![lastPartnersIndex] = {
         id: uuid.v4(),
         users: [],
         createdAt: new Date()
       }
     }
 
-    if(isNullOrEmpty(tempCourt.match![lastMatchIndex].partners![lastPartnersIndex]?.users)) {
-      tempCourt.match![lastMatchIndex].partners![lastPartnersIndex].users = []
+    if(isNullOrEmpty(tempCourt.matches![lastMatchIndex].partners![lastPartnersIndex]?.users)) {
+      tempCourt.matches![lastMatchIndex].partners![lastPartnersIndex].users = []
     }
-    if(tempCourt.match![lastMatchIndex].partners![lastPartnersIndex].users!.length < 2)
-      tempCourt.match![lastMatchIndex].partners![lastPartnersIndex].users?.push(user);
+    if(tempCourt.matches![lastMatchIndex].partners![lastPartnersIndex].users!.length < 2)
+      tempCourt.matches![lastMatchIndex].partners![lastPartnersIndex].users?.push(user);
     else {
-      tempCourt.match![lastMatchIndex].partners!.push({
+      tempCourt.matches![lastMatchIndex].partners!.push({
         id: uuid.v4(),
         users: [],
         createdAt: new Date()
       });
-      lastPartnersIndex = (tempCourt!.match![lastMatchIndex].partners?.length || 1) - 1;
-      tempCourt.match![lastMatchIndex].partners![lastPartnersIndex].users?.push(user);
+      lastPartnersIndex = (tempCourt!.matches![lastMatchIndex].partners?.length || 1) - 1;
+      tempCourt.matches![lastMatchIndex].partners![lastPartnersIndex].users?.push(user);
     }
   }
   return tempCourt;
 }
 
-export function isPlayerInSchedule(group: Group, userId: string) {
-  return !group.schedules.find(sched => !sched.ended)!.players?.some(qp => qp.id === userId)
+export function isPlayerInSchedule(userId: string, schedule?: Schedule) {
+  return schedule?.players?.some(qp => qp.id === userId)
   
 }
 
@@ -138,3 +138,74 @@ export function camelizeKeys(obj: any): any {
   }
   return obj;
 };
+
+export function toSnakeCase(str: string): string {
+  return str
+    .replace(/([A-Z])/g, "_$1") // insert underscore before capital letters
+    .replace(/[-\s]+/g, "_") // replace spaces/dashes with underscores
+    .toLowerCase()
+    .replace(/^_+/, ""); // remove leading underscores
+}
+
+export function keysToSnakeCase<T>(obj: T): any {
+  if (Array.isArray(obj)) {
+    return obj.map(keysToSnakeCase);
+  } else if (obj !== null && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [
+        toSnakeCase(k),
+        keysToSnakeCase(v),
+      ])
+    );
+  }
+  return obj;
+}
+
+export function getNextMissing(arr: number[]): number {
+  if (arr.length === 0) return 1; // if empty, start at 1
+
+  const sorted = [...arr].sort((a, b) => a - b);
+
+  for (let i = sorted[0]; i <= sorted[sorted.length - 1]; i++) {
+    if (!sorted.includes(i)) {
+      return i; // return first missing
+    }
+  }
+
+  // if no missing numbers, return next in sequence
+  return sorted[sorted.length - 1] + 1;
+}
+
+export function darkenColor(hex: string, percent: number): string {
+  // Clamp and sanitize
+  const p = Math.min(Math.max(percent, 0), 100);
+  let clean = hex.replace("#", "");
+
+  // Support shorthand #abc
+  if (clean.length === 3) {
+    clean = clean.split("").map(c => c + c).join("");
+  }
+  if (clean.length !== 6) {
+    throw new Error(`Invalid hex color: ${hex}`);
+  }
+
+  const num = parseInt(clean, 16);
+  let r = (num >> 16) & 0xff;
+  let g = (num >> 8) & 0xff;
+  let b = num & 0xff;
+
+  const factor = 1 - p / 100;
+
+  r = Math.round(r * factor);
+  g = Math.round(g * factor);
+  b = Math.round(b * factor);
+
+  return (
+    "#" +
+    [r, g, b]
+      .map(x => x.toString(16).padStart(2, "0"))
+      .join("")
+      .toLowerCase()
+  );
+}
+

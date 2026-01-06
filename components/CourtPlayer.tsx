@@ -8,12 +8,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 type CourtPlayerProps = {
   user: User;
+  disabled?: boolean;
   onPress?: (userId: string) => void
 };
 
 const isMobile = isMobileWidth();
 
-const CourtPlayer: React.FC<CourtPlayerProps> = ({ user, onPress}) => {
+const CourtPlayer: React.FC<CourtPlayerProps> = ({ user, disabled = false, onPress }) => {
   const colors = fetchColorByLevel(user.level.name);
   return (
     <Pressable
@@ -23,12 +24,14 @@ const CourtPlayer: React.FC<CourtPlayerProps> = ({ user, onPress}) => {
         {
           backgroundColor: colors.bgColor
         }
-      ]} key={user.id}>
-      <View style={{ borderRadius: '50%', backgroundColor: colors.fgColor, padding: 5}}>
-        <Ionicons name={user.sex === "male" ? "man" : "woman"} color={colors.bgColor} size={18} />
+      ]}
+      key={user.id}
+      disabled={disabled}>
+      <View style={{ borderRadius: '50%', backgroundColor: colors.fgColor, padding: 5, margin: 2}}>
+        <Ionicons name={user.sex === "male" ? "man" : "woman"} color={colors.bgColor} size={16} />
       </View>
       
-      <ThemedText color={colors.fgColor} fontSize={isMobile ? 12 : 16} style={styles.textContainer}>{user.username}</ThemedText>
+      <ThemedText color={colors.fgColor} fontSize={isMobile ? 11 : 16} style={styles.textContainer}>{user.username}</ThemedText>
     </Pressable>
   )
 };
@@ -40,11 +43,13 @@ const styles = StyleSheet.create({
     width: isMobile ? 100 : 120,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start'
+    justifyContent: 'flex-start',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
   },
   textContainer: {
     paddingVertical: isMobile ? 8 : 10,
-    paddingLeft: isMobile ? 8 : 15,
+    paddingLeft: isMobile ? 3 : 15,
   }
 });
 

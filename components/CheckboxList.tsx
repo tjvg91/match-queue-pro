@@ -3,6 +3,7 @@ import { FlatList, TouchableOpacity, Text, View, StyleSheet } from 'react-native
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { ThemedText } from './ThemedText';
 import { Colors } from '@/constants/Colors';
+import { isMobileWidth } from '@/app/utils';
 
 type CheckboxListProps = {
   data: { id: string; label: string }[];
@@ -16,6 +17,8 @@ const CheckboxList: React.FC<CheckboxListProps> = ({
   onChange,
 }) => {
   const [checkedIds, setCheckedIds] = useState<string[]>(initialCheckedIds);
+
+  const isMobile = isMobileWidth();
 
   const toggleCheck = (id: string) => {
     let newCheckedIds: string[];
@@ -34,10 +37,10 @@ const CheckboxList: React.FC<CheckboxListProps> = ({
       onPress={() => toggleCheck(item.id)}
       activeOpacity={0.7}>
       <View style={styles.iconContainer}>
-        <ThemedText color={Colors.darkBlue} fontSize={20} style={{ marginBottom: -12.5 }}>{item.label}</ThemedText>
+        <ThemedText color={Colors.darkBlue} fontSize={isMobile ? 15 : 20} style={{ marginBottom: -6.5 }}>{item.label}</ThemedText>
         {checkedIds.includes(item.id) ? 
-          <FontAwesomeIcon size={25} color={Colors.darkBlue} icon="square-check" /> : 
-          <FontAwesomeIcon size={25} color={Colors.darkBlue} icon={["far", "square"]} />}
+          <FontAwesomeIcon size={isMobile ? 18 : 25} color={Colors.darkBlue} icon="square-check" /> : 
+          <FontAwesomeIcon size={isMobile ? 18 : 25} color={Colors.darkBlue} icon={["far", "square"]} />}
       </View>
     </TouchableOpacity>
   );
@@ -56,8 +59,8 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   iconContainer: {
     marginRight: 12,

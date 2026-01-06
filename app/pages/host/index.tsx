@@ -6,21 +6,24 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Dimensions, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, Pressable, StyleSheet, View } from "react-native";
 import z from "zod";
 import HostCourt from "./court";
 import HostQueue from "./queue";
 import uuid from 'react-native-uuid';
 
-import { camelizeKeys, isMobileWidth, isPlayerInCourt } from "@/app/utils";
+import { getNextMissing, isMobileWidth, isPlayerInCourt } from "@/app/utils";
 import useMQStore from "@/hooks/useStore";
 import { useShallow } from "zustand/shallow";
 import ShuttlecockSVG from "@/components/svg/Shuttlecock";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Toast } from "toastify-react-native";
+import Dialog from "@/components/Dialog";
+import RadialTimer from "@/components/ui/radialTimer";
+import { DraxScrollView } from "react-native-drax";
 
 const schema = z.object({
   groupName: z.string().min(3, { error: "Minimum no. of characters is 3" }).max(30, { error: "Maximum no. of characaters is 30" }),
@@ -30,6 +33,7 @@ const isMobile = isMobileWidth();
 const screenWidth = Dimensions.get('screen').width;
 
 export default function HostHomeScreen() {
+  const params = useLocalSearchParams();
   const { activeGroup, activeSchedule, setActiveGroup, setActiveSchedule, supabase, isLoading, setLoading: setLoading, user } = useMQStore(useShallow(s => ({
     activeGroup: s.activeGroup,
     setActiveGroup: s.setActiveGroup,
@@ -41,24 +45,27 @@ export default function HostHomeScreen() {
     user: s.user
   })))
 
+  const [isDialogVisible, setDialogVisible] = useState(false);
   const [isCreate, setIsCreate] = useState(false);
   const [isFirstGroup, setFirstGroup] = useState(true);
   const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
   });
   const router = useRouter();
-  const [isStarted, setIsStarted] = useState(false);
+  const [isStarted, setIsStarted] = useState(params?.isStarted === 'true' || false);
   const [activeTab, setActiveTab] = useState<'queue' | 'court'>('queue');
 
   const insets = useSafeAreaInsets();
 
   const getActiveGroup = useCallback(async () => {
-    const curGroup = await supabase?.from('group')
-                .select('*, players:user_group(group(*)), schedule(group(*))')
-                .eq('managed_by', user?.id).single()
-    if(curGroup?.data) {
-      setActiveGroup(camelizeKeys(curGroup?.data));
+    const curGroup = await supabase?.rpc('get_managed_groups', {
+                      p_user_id: user?.id
+                    }).select('*');
+    if(curGroup?.data && curGroup?.data.length) {
+      setActiveGroup(curGroup?.data?.[0]);
       setIsCreate(false);
+    } else {
+      setIsCreate(true);
     }
   }, [setActiveGroup, supabase, user?.id])
 
@@ -87,66 +94,63 @@ export default function HostHomeScreen() {
     setLoading(false);
   }
 
+  const hostNow = async () => {
+    setDialogVisible(false);
+
+    setLoading(true);
+
+    const res = await supabase?.rpc('create_schedule_with_courts', {
+      p_group_id: activeGroup?.id,
+      p_court_numbers: ["", "1"]
+    }).select('*').single();
+    if(!res?.error && res?.data) {
+
+      setIsCreate(false);
+      setIsStarted(true);
+      setActiveSchedule(res?.data);
+      
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
     getActiveGroup();
-  }, [])
+  }, [getActiveGroup])
 
   useEffect(() => {
     setIsCreate(!activeGroup);
     setFirstGroup(!activeGroup);
   }, [activeGroup]);
 
-  useEffect(() => {
-    if(isStarted) {
-      const tempSchedule = activeGroup?.schedules.find(sched => !sched.ended);
-      if(tempSchedule) {
-        const dummyCourts =  Array.apply(null, Array(Math.max(Math.min(Math.floor((tempSchedule.players?.length || 0) / 4), 2), 1))).map((y, i) => i + 1);
-        dummyCourts.forEach(c => tempSchedule.courts?.push({
-          id: uuid.v4(),
-          createdAt: new Date()
-        }))
-        setActiveSchedule?.(tempSchedule);
-      }
-    }
-  }, [isStarted])
-
   const renderHostCourt = () => (
     <HostCourt
-      courts={activeSchedule?.courts?.filter(court => court.number != null) || []}
-      onAddCourt={() => {
-        const newCourt = {
-          id: uuid.v4(),
-          createdAt: new Date(),
-          number: `${(activeSchedule?.courts?.filter(c => !!c.number?.length).length || 0) + 1} `
-        }
-        if(activeSchedule?.courts) {
-          setActiveSchedule?.({
-            ...activeSchedule,
-            courts: [ ...activeSchedule.courts, newCourt]
-          });
+      courts={activeSchedule?.courts?.filter(court => court.number != null && court.number !== "") || []}
+      onAddCourt={async () => {
+        setLoading(true);
+        const res = await supabase?.rpc('add_court_and_return_schedule', {
+          p_schedule_id: activeSchedule?.id,
+          p_number: getNextMissing(activeSchedule?.courts?.map(c => parseInt(c.number || "0")) || [])
+        }).select('*').single();
+        if(!res?.error && res?.data) {
+          setActiveSchedule?.(res?.data);
         } else {
-          setActiveSchedule?.({
-            ...activeSchedule!,
-            courts: [newCourt]
-          });
+          console.log(res?.error);
         }
+        setLoading(false);
       }}/>
   )
 
-  const renderHostQueue = () => (
-    <HostQueue
-      courts={activeSchedule?.courts?.filter(court => court.number == null) || []}
-      players={activeSchedule?.players?.filter(player => !activeSchedule.courts?.some(court => isPlayerInCourt(court, player))) || []}
-      onCourtUpdate={(court) => {
-        setActiveSchedule?.({
-          ...activeSchedule!,
-          courts: activeSchedule!.courts?.map(c => {
-            if(c.id === court.id) return court;
-            return c;
-          }) || []
-        })
-      }}/>
-  )
+  const renderHostQueue = useCallback(() => {
+    const filterPlayers = activeSchedule?.players?.filter(player => !activeSchedule.courts?.some(court => isPlayerInCourt(court, player))) || [];
+    return (<HostQueue
+      courts={activeSchedule?.courts?.filter(court => court.number == null || court.number === "") || []}
+      players={filterPlayers}
+    />)
+  }, [activeSchedule])
 
   const createGroup = () => (
     <>
@@ -214,7 +218,7 @@ export default function HostHomeScreen() {
             loading={isLoading}
             disabled={isLoading}
             type="glow"
-            onPress={() => setIsStarted(true)}
+            onPress={() => setDialogVisible(true)}
             fontSize={isMobile ? 15 : 20}
             style={{ marginTop: 10, paddingVertical: 15 }} />
         </View>
@@ -240,10 +244,10 @@ export default function HostHomeScreen() {
       <View style={styles.startSubContainer}>
       {
         isMobile ? (
-          <ScrollView style={{ overflowY: 'auto' }}>
+          <View style={{ overflowY: 'auto', height: '100%' }}>
             {activeTab === 'court' && renderHostCourt()}
             {activeTab === 'queue' && renderHostQueue()}
-          </ScrollView>    
+          </View>    
         ) : (
           <>
             {renderHostCourt()}
@@ -252,10 +256,11 @@ export default function HostHomeScreen() {
         )
       }
       { isMobile && (
-        <View style={[styles.tabContainer, { paddingBottom: insets.bottom + 30, marginTop: -insets.bottom, transform: `translateY(${insets.bottom}px)` }]}>
+        <View style={[styles.tabContainer, { paddingBottom: insets.bottom, marginTop: -insets.bottom, transform: `translateY(${insets.bottom}px)` }]}>
           <Pressable
             style={[styles.tab, { marginTop: 15, borderRightWidth: 1, borderRightColor: Colors.label }]}
-            onPress={() => activeTab !== "court" && setActiveTab("court")}>
+            onPress={() => activeTab !== "court" && setActiveTab("court")}
+            disabled={isLoading}>
             <Ionicons
               name="grid"
               size={25}
@@ -264,7 +269,7 @@ export default function HostHomeScreen() {
               fontSize={13}
               color={activeTab === "court" ? Colors.blue : Colors.textColor}>Court</ThemedText>
           </Pressable>
-          <Pressable style={styles.tab} onPress={() => activeTab !== "queue" && setActiveTab("queue")}>
+          <Pressable style={styles.tab} onPress={() => activeTab !== "queue" && setActiveTab("queue")} disabled={isLoading}>
             <ShuttlecockSVG
               size={48}
               color={activeTab === "queue" ? Colors.blue : Colors.textColor} />
@@ -290,26 +295,23 @@ export default function HostHomeScreen() {
     }, { paddingTop: insets.top }]}>
       {isStarted && (
         <View style={styles.startContainer}>
-          <View style={{ flexDirection: 'row', columnGap: 10, paddingTop: 20, paddingLeft: isMobile ? 15 : 0 }}>
-            <ThemedText type="bold" fontSize={isMobile ? 20 : 30}>{testData.group.name}</ThemedText>
-            <FontAwesomeIcon icon="clock-rotate-left" color={Colors.gradientStopperLight} size={ isMobile ? 15 : 25}/>
+          <View style={{ paddingTop: 20, paddingLeft: isMobile ? 15 : 0 }}>
+            <Pressable onPress={() => console.log('group pressed')} style={{ flexDirection: 'row', alignItems: 'center', columnGap: 10 }}>
+              <ThemedText type="bold" fontSize={isMobile ? 20 : 30}>{activeGroup?.name}</ThemedText>
+              <FontAwesomeIcon icon="info-circle" color={Colors.gradientStopperLight} size={ isMobile ? 14 : 25} />
+            </Pressable>
           </View>
-          <View>
-            <Button
-              disabled
-              style={{
-                paddingVertical: isMobile ? 10 : 20,
-                paddingHorizontal: 20,
-                marginTop: 20,
-              }}
-              textColor={Colors.textColor}
-              fontSize={isMobile ? 12 : 16}
-              width="auto"
-              text="End Schedule"/>
-            </View>
         </View>
       )}
       {isCreate ? createGroup() : isStarted ? showStartedView() : showGroupHome()}
+
+      <Dialog
+        visible={isDialogVisible}
+        onRequestClose={() => setDialogVisible(false)}>
+        <ThemedText fontSize={20} type="bold" color={Colors.darkGray} style={{ marginBottom: 10, textAlign: 'center' }}>Hosting in</ThemedText>
+        <RadialTimer duration={3} size={150} strokeWidth={15} strokeColor={Colors.secondary} fontSize={40} onFinish={() => hostNow()}/>
+        <Button text="Cancel" type="clear" textColor={Colors.darkRed} style={{ marginTop: 20 }} onPress={() => setDialogVisible(false)} />
+      </Dialog>
     </View>
     
   );
@@ -338,7 +340,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
     width: '80%',
-    maxWidth: 580
+    maxWidth: 580,
+    marginTop: -25
   },
   startContainer: {
     paddingHorizontal: '3%',
@@ -346,14 +349,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    columnGap: 10
+    columnGap: 10,
   },
   startSubContainer: {
     width: '100%',
     flex: 1,
     justifyContent: 'flex-start',
     flexDirection: isMobile ? "column" : 'row',
-    padding: 30
+    padding: 30,
+    flexGrow: 1,
   },
   tabContainer: {
     backgroundColor: Colors.darkBlue,

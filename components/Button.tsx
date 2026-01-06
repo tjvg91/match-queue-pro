@@ -2,7 +2,7 @@ import { Colors } from '@/constants/Colors';
 import React from 'react';
 import { ActivityIndicator, DimensionValue, StyleSheet, TextStyle, TouchableWithoutFeedback, View, ViewStyle } from 'react-native';
 import { ThemedText } from './ThemedText';
-import { isMobileWidth } from '@/app/utils';
+import { darkenColor, isMobileWidth } from '@/app/utils';
 
 type ButtonProps = {
   onPress?: () => void;
@@ -87,11 +87,11 @@ const styles = StyleSheet.create({
     color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,
-    paddingVertical: 15,
+    paddingVertical: 10,
     borderRadius: 6,
   },
   primaryFocused: {
-    backgroundColor: '#0056b3',
+    backgroundColor: darkenColor(Colors.primary, 30),
     color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,
@@ -107,8 +107,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   clearFocused: {
-    backgroundColor: 'transparent',
-    color: Colors.primary,
+    backgroundColor: Colors.primary,
+    color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,
     paddingVertical: 10,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   secondaryFocused: {
-    backgroundColor: Colors.secondary,
+    backgroundColor: darkenColor(Colors.secondary, 30),
     color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     boxShadow: "none"
   },
   errorFocused: {
-    backgroundColor: Colors.darkRed,
+    backgroundColor: darkenColor(Colors.darkRed, 30),
     color: Colors.textColor,
     borderWidth: 0,
     opacity: 1,

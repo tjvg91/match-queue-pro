@@ -129,6 +129,7 @@ export default function LogSignScreen() {
             if(data?.data) {
               setUser?.(data.data);
               setIsAuthenticated(true);
+              setLoading(false);
               navigation.dispatch(
                 CommonActions.reset({
                   index: 0,
@@ -506,5 +507,6 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 50,
     maxWidth: 500,
+    marginTop: -70
   },
 });

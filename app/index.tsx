@@ -1,65 +1,78 @@
-
+import 'react-native-gesture-handler';
 import { Dimensions, Image, StyleSheet, View } from 'react-native';
 import Splash from '../assets/images/appicon.png'
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
-import { useEffect } from 'react';
+import { act, useEffect } from 'react';
 import useMQStore from '@/hooks/useStore';
 import { useShallow } from 'zustand/shallow';
-import { CommonActions } from '@react-navigation/native';
-import { isMobileWidth } from './utils';
+import { camelizeKeys, isMobileWidth } from './utils';
 import * as Linking from 'expo-linking';
-import { useNavigation, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { Toast } from 'toastify-react-native';
 
 
 const screenWidth = Dimensions.get('screen').width;
 const imageSize = Math.min(screenWidth * 0.4, 200);
 
 export default function App() {
-   const { isAuthenticated, supabase, user } = useMQStore(useShallow((state) => ({
-      errorMessages: state.errorMessages,
-      clearErrorMessages: state.clearErrorMessages,
-      isAuthenticated: state.isAuthenticated,
-      supabase: state.supabase,
-      user: state.user
-    }
+  const { isAuthenticated, supabase, user, activeGroup, setActiveSchedule } = useMQStore(useShallow((state) => ({
+    errorMessages: state.errorMessages,
+    clearErrorMessages: state.clearErrorMessages,
+    isAuthenticated: state.isAuthenticated,
+    supabase: state.supabase,
+    user: state.user,
+    activeGroup: state.activeGroup,
+    setActiveSchedule: state.setActiveSchedule
+  }
   )));
   const router = useRouter();
   const isMobile = isMobileWidth();
 
   useEffect(() => {
     let timer = -1;
-    if(isAuthenticated && user?.password && user.email) {
-      supabase?.auth.getUser().then(auth => {
-        if(!!auth.data.user) router.replace('/pages/home')
-        else {
+    if (isAuthenticated && user?.password && user.email) {
+      supabase?.auth.getUser().then(async auth => {
+        if (!auth.data.user) router.replace('/logSignIn')
+        else if(user){
           supabase?.auth.signInWithPassword({
-            email: user.email,
-            password: user.password
-          }).then(() => router.replace('/pages/home'));
-        }
-      })
+            email: user.email!,
+            password: user.password!
+          }).then(async () => {
+            const curSchedule = await supabase.rpc('get_active_schedules', {
+              p_user_id: user.id
+            }).single();
 
-      
+            console.log(curSchedule);
+            
+            if (!!curSchedule.data && !curSchedule.error) {
+              setActiveSchedule(camelizeKeys(curSchedule.data?.[0]));
+
+              if(activeGroup?.managedBy === user.id)
+                router.replace('/pages/host?isStarted=true');
+              else router.replace('/pages/player?isCheckedIn=true');
+              return;
+            } else {
+              router.replace('/pages/home');
+            }
+          })
+            .catch(err => {
+              console.log(err);
+              Toast.error("Something went wrong. Please check your connection or restart the app.");
+            });
+        }
+      }).catch(() => router.replace('/logSignIn'));
     }
     else {
       timer = setTimeout(() => {
-        /*navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            //routes: [{ name: "LogSignIn" }]
-            routes: [{ name: !isAuthenticated ? "LogSignIn" : "Home" }]
-          })
-        );*/
-        router.replace('/pages/home');
-      
+        router.push('/logSignIn');
       }, 2000);
     }
-    
+
     return () => timer !== -1 && clearTimeout(timer)
   }, [isAuthenticated])
 
-    useEffect(() => {
+  useEffect(() => {
     // When app is opened via a deep link
     const handleDeepLink = (event: Linking.EventType) => {
       const url = event.url;
@@ -89,14 +102,14 @@ export default function App() {
 
     return () => subscription.remove();
   }, []);
-  
+
   return (
     <View style={styles.container}>
       <Image source={Splash} style={styles.image} resizeMode="contain" />
 
       <ThemedText
         color={Colors.textColor2}
-        fontSize={isMobile ? 19: 25}
+        fontSize={isMobile ? 19 : 25}
         type="light"
         style={{ letterSpacing: 1 }}
       >Match Queue Pro</ThemedText>

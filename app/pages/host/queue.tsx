@@ -1,15 +1,13 @@
-import { Collapsible } from 'react-native-fast-collapsible';
 import CourtComponent from "@/components/Court";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
-import { Court, User } from "@/constants/types";
+import { Court, Schedule, User } from "@/constants/types";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { Modal, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Gesture, Pressable } from "react-native-gesture-handler";
 import ReorderableList, { ReorderableListDragStartEvent, reorderItems, useReorderableDrag } from 'react-native-reorderable-list';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import Button from '@/components/Button';
-import { queuePlayer, fetchColorByLevel, isPlayerInSchedule, isMobileWidth } from '@/app/utils';
+import { queuePlayer, fetchColorByLevel, isPlayerInSchedule, isMobileWidth, camelizeKeys, keysToSnakeCase } from '@/app/utils';
 import Dialog from '@/components/Dialog';
 import CheckboxList from '@/components/CheckboxList';
 import useMQStore from '@/hooks/useStore';
@@ -18,6 +16,10 @@ import Hr from '@/components/ui/hr';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import ShuttlecockSVG from '@/components/svg/Shuttlecock';
 import UserDownloadSVG from '@/components/svg/UserDownload';
+import { MQCollapsible } from '@/components/Collapsible';
+import { PlayerDetails } from "@/components/PlayerDetails";
+import { Toast } from "toastify-react-native";
+import uuid from 'react-native-uuid';
 
 interface Props {
   courts?: Court[]
@@ -32,44 +34,62 @@ export default function HostQueue({
   players,
   onCourtUpdate
 }: Props) {
-  const { activeGroup } = useMQStore(useShallow(s => ({
-    activeGroup: s.activeGroup
+  const { supabase, activeGroup, setActiveGroup, activeSchedule, setActiveSchedule, isLoading, setLoading } = useMQStore(useShallow(s => ({    
+    supabase: s.supabase,
+    activeGroup: s.activeGroup,
+    setActiveGroup: s.setActiveGroup,
+    activeSchedule: s.activeSchedule,
+    setActiveSchedule: s.setActiveSchedule,
+    isLoading: s.isLoading,
+    setLoading: s.setLoading
   })))
 
-  const [isPlayersCollapsed, setPlayersCollapsed] = useState(true);
+  const [isPlayersVisible, setPlayersVisible] = useState(true);
   const [isAddPlayerModalVisible, setAddPlayerModalVisible] = useState(false);
+  const [isCreatePlayerModalVisible, setCreatePlayerModalVisible] = useState(false);
   const [playersData, setPlayersData] = useState(players);
   const [curCourts, setCurCourts] = useState(courts);
+
+  const [tempChecked, setTempChecked] = useState<string[]>([]);
   
   const panGesture = useMemo(() => Gesture.Pan().activateAfterLongPress(520), []);
 
-  const onPlayerSelect = (player: User) => {
+  const onPlayerSelect = async (player: User) => {
     const targetCourt = courts?.find(qc => (
-      qc.match?.[0].partners?.length || 0) < 3 &&
-      (qc.match?.[0].partners?.flatMap(p => p.users || [])?.length || 0) < 4 &&
-      qc.number == null
+      qc.matches == null || !qc.matches.length || ((qc.matches?.[0].partners?.length || 0) < 3 &&
+      (qc.matches?.[0].partners?.flatMap(p => p.users || [])?.length || 0) < 4 &&
+      (qc.number == null || qc.number === "")))
     );
+
     if(targetCourt) {
       const updatedCourt = queuePlayer(targetCourt, player);
 
-      onCourtUpdate?.(updatedCourt);  
-      setCurCourts(curCourts?.map(c => {
-        if(c.id === updatedCourt.id) return updatedCourt;
-        return c;
-      }));
+      const res = await supabase?.rpc('upsert_court_with_matches', {
+        'court_data': keysToSnakeCase(updatedCourt),
+        'schedule_id': activeSchedule?.id || ''
+      });
+      
+      if(!res?.error && updatedCourt && res?.data) {
+        setActiveSchedule?.({
+          ...activeSchedule!,
+          courts: activeSchedule!.courts?.map(c => {
+            if(c.id === updatedCourt.id) return updatedCourt;
+            return c;
+          }) || []
+        });
+        onCourtUpdate?.(updatedCourt);  
+        setCurCourts(curCourts?.map(c => {
+          if(c.id === updatedCourt.id) return updatedCourt;
+          return c;
+        }));
+      }
     }
-  }
-
-  const onPlayerInsert = (playerIds: string[]) => {
-    playerIds.forEach(pId => {
-      const pIdx = activeGroup!.players!.findIndex(p => p.id === pId);
-      activeGroup!.players!
-    }) 
+    
   }
 
   const QueueItem = memo((player: User) => {
     const drag = useReorderableDrag();
-    const colors = fetchColorByLevel(player.level.name);
+    const colors = fetchColorByLevel(player.level?.name);
     return (
       <Pressable
         onLongPress={drag}
@@ -104,39 +124,137 @@ export default function HostQueue({
     'worklet';
   }, []);
 
-  const addPlayerModal = () => (
+  const createPlayerModal = () => (
     <Dialog
-      visible={isAddPlayerModalVisible}
-      onRequestClose={() => setAddPlayerModalVisible(false)}>
-      <View style={{ flexDirection: 'column', columnGap: 10, overflowY: 'auto' }}>
-        <CheckboxList
-          data={activeGroup?.players?.filter(p => isPlayerInSchedule(activeGroup, p.id)).map(p => ({
-            label: p.username,
-            id: p.id
-          })) || []}
-        />
+      dark
+      showClose
+      visible={isCreatePlayerModalVisible}
+      onRequestClose={() => setCreatePlayerModalVisible(false)}>
+      <PlayerDetails hideEmail existingUser={null} onSuccess={async (data) => {
+        setLoading(true);
+        const res = await supabase?.rpc('add_user_to_schedule', {
+          p_schedule_id: activeSchedule?.id || '',
+          p_username: data.username,
+          p_sex: data.sex,
+          p_level_id: data.level,
+        }).select('*').single();
+        console.log(res);
+        if(res?.error) {
+          Toast.error(res?.error.message || "An error occurred while creating the player.");
+        } else if(res?.data?.['error']) {
+          Toast.error(res.data['error'] || "An error occurred while creating the player.");
+        } else {
+          const newUser = camelizeKeys(res?.data) as User;
+          
+          const tempSchedPlayers = activeSchedule?.players?.length ? [
+            ...activeSchedule?.players,
+            newUser
+          ] : [newUser];
+          setActiveSchedule({
+            ...activeSchedule,
+            players: tempSchedPlayers
+          });
 
-        <Hr color={Colors.gray} style={{ marginTop: 10 }}/>
-        
-        <View style={{ flex: 1, flexDirection: 'row', marginTop: 15 }}>
-          <Button
-            type="clear"
-            text="Cancel"
-            textColor={Colors.primary}
-            style={{ width: '50%' }}
-            onPress={() => setAddPlayerModalVisible(false)}/>
-          <Button
-            type="primary"
-            text="Select"
-            style={{ width: '50%' }}
-            onPress={() => {
-              setAddPlayerModalVisible(false);
-            }}/>
-        </View>
-      </View>
-      
+          const tempGroupPlayers = activeGroup?.players?.length ? [
+            ...activeGroup?.players,
+            newUser
+          ] : [newUser];
+          setActiveGroup({
+            ...activeGroup,
+            players: tempGroupPlayers
+          });
+
+          setCreatePlayerModalVisible(false);
+          Toast.success("Player created and added to queue.")
+        }
+        setLoading(false);
+      }} />
     </Dialog>
   )
+
+  const addPlayerModal = () => {
+    const list = activeGroup?.players?.filter(p => !isPlayerInSchedule(p.id, activeSchedule)).map(p => ({
+      label: p.username,
+      id: p.id
+    })) || [];
+
+    return (<Dialog
+      visible={isAddPlayerModalVisible}
+      onRequestClose={() => setAddPlayerModalVisible(false)}>
+      <View style={{ flexDirection: 'column', columnGap: 10, overflowY: 'auto', marginHorizontal: -10 }}>
+        {
+          !!list.length ? (
+            <>
+              <CheckboxList
+                data={list}
+                onChange={setTempChecked}
+              />
+
+              <Hr color={Colors.gray} style={{ marginTop: 20 }}/>
+              
+              <View style={{ flex: 1, flexDirection: 'row', marginTop: 10, marginBottom: -10 }}>
+                <Button
+                  type="clear"
+                  text="Cancel"
+                  textColor={Colors.primary}
+                  style={{ width: '50%' }}
+                  onPress={() => setAddPlayerModalVisible(false)}
+                  disabled={isLoading}/>
+                <Button
+                  type="primary"
+                  text="Select"
+                  style={{ width: '50%' }}
+                  onPress={async () => {
+                    if(tempChecked.length) {
+                      setLoading(true);
+                      const res = await supabase?.from('user_schedule').insert(tempChecked.map(checked => ({
+                        id: uuid.v4(),
+                        user_id: checked,
+                        schedule_id: activeSchedule?.id
+                      })))
+                      if(!res?.error) {
+                        if(activeSchedule?.players?.length) {
+                          setActiveSchedule({
+                            ...activeSchedule,
+                            players: [
+                              ...activeSchedule?.players,
+                              ...tempChecked.map(checked => activeGroup!.players.find(pl => pl.id === checked))
+                            ]
+                          })
+                        } else {
+                          setActiveSchedule({
+                            ...activeSchedule,
+                            players: tempChecked.map(checked => activeGroup!.players.find(pl => pl.id === checked))
+                          })
+                        }
+                        setAddPlayerModalVisible(false);
+                        Toast.success("Player added to queue.");
+                      } else {
+                        console.log(res.error);
+                        Toast.error(res.error.message || res.error.details);
+                      }
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={isLoading || tempChecked.length === 0}/>
+              </View>
+            </>
+          ) : (
+            <View style={{ rowGap: 20 }}>
+              <ThemedText color={Colors.darkGray} style={{ textAlign: 'center' }}>All players are in queue</ThemedText>
+              <Button
+                type="primary"
+                text="Cancel"
+                textColor={Colors.textColor}
+                onPress={() => setAddPlayerModalVisible(false)}
+                disabled={isLoading}/>
+            </View>
+          )
+        }
+      </View>
+      
+    </Dialog>);
+  }
 
   useEffect(() => {
     setPlayersData(players);
@@ -157,35 +275,59 @@ export default function HostQueue({
               width={'100%'}
               mode="PRE-GAME"
               court={c}
-              onMatchChanged={(court, match) => {
-                onCourtUpdate?.({
+              onMatchChanged={async (court, match, userId) => {
+                const updatedCourt = {
                   ...court,
-                  match: court.match?.map(m => {
+                  matches: court.matches?.map(m => {
                     if(m.id === match.id) return match;
                     return m;
                   })
-                })
+                };
+                
+                if(updatedCourt) {
+                  const res = await supabase?.rpc('remove_user_from_court', {
+                    'p_user_id': userId
+                  });
+
+                  console.log(res);
+
+                  if(!res?.error && !!res?.data) {
+                    const player = activeGroup?.players.find(p => p.id === userId)!;
+                    setActiveSchedule?.({
+                      ...activeSchedule!,
+                      courts: activeSchedule!.courts?.map(c => 
+                        c.id === res.data.id ? res.data : c
+                      ) || [],
+                    })
+                    setPlayersData([...(playersData || []), player]);
+                  }
+                }
+              }}
+              onAssignCourt={async (match) => {
+                const res = await supabase?.rpc('assign_match_to_court', {
+                  'p_match_id': match.id,
+                  'p_schedule_id': activeSchedule?.id
+                });
+                console.log(res);
+                if(!res?.error) {
+                  console.log(res?.data);
+                  setActiveSchedule(res?.data);
+                }
               }}/>
           )}
         </View>
       </View>
       
       <View style={{ width: '100%', height: 1, backgroundColor: Colors.label }} />
-
-      <View style={{ width: '100%', flexDirection: 'column', flex: 1, flexGrow: 1, marginTop: 15, marginBottom: 10 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', columnGap: 5, marginTop: -7.5 }}
-            onPress={() => setPlayersCollapsed(!isPlayersCollapsed)}>
-            <FontAwesomeIcon
-              icon={!isPlayersCollapsed ? "caret-right" : "caret-down"}
-              size={15}
-              color={Colors.gradientStopperLight} />
-            <ThemedText fontSize={16}>Players</ThemedText>
-          </TouchableOpacity>
+      
+      <MQCollapsible
+        title="Players"
+        isVisible={isPlayersVisible}
+        setVisible={setPlayersVisible}
+        headerRight={(
           <View style={{ flexDirection: 'row', columnGap: 10, marginBottom: 5 }}>
             <Pressable
-              onPress={() => setAddPlayerModalVisible(true)}>
+              onPress={() => setCreatePlayerModalVisible(true)}>
               <Ionicons name="person-add" size={isMobile ? 20 : 25} color={Colors.gradientStopperLight} />
             </Pressable>
             <Pressable
@@ -193,29 +335,25 @@ export default function HostQueue({
               <UserDownloadSVG size={isMobile ? 20 : 25} color={Colors.gradientStopperLight} />
             </Pressable>
           </View>
-          
-        </View>
-        {/*height: dimensions.height - courtsContainerHeight - 320, */}
-
-        <Collapsible
-          isVisible={isPlayersCollapsed}>
-          <ReorderableList
-            data={playersData || []}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-            onReorder={({ from, to }) => {
-              setPlayersData(data => reorderItems((data || []), from, to));
-            }}
-            renderItem={(data) => {
-              return <QueueItem {...data.item} />
-            }}
-            style={{ width: '100%', height: '100%' }}
-            panGesture={panGesture}
-            scrollEnabled={false}
-            keyExtractor={item => item.id}/>
-        </Collapsible>
-      </View>
+        )}>
+        <ReorderableList
+          data={playersData || []}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          onReorder={({ from, to }) => {
+            setPlayersData(data => reorderItems((data || []), from, to));
+          }}
+          renderItem={(data) => {
+            return <QueueItem {...data.item} />
+          }}
+          style={{ width: '100%', height: '100%' }}
+          panGesture={panGesture}
+          scrollEnabled={true}
+          showsVerticalScrollIndicator={true}
+          keyExtractor={item => item.id}/>
+      </MQCollapsible>
       {addPlayerModal()}
+      {createPlayerModal()}
     </View>
   )
 }

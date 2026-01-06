@@ -2,6 +2,7 @@ import { Group, MQStore } from '@/constants/types';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { camelizeKeys } from '@/app/utils';
 
 // Define the store
 const useMQStore = create(
@@ -24,7 +25,10 @@ const useMQStore = create(
       clearErrorMessages: () => set({ errorMessages: [] }),
 
       activeGroup: undefined,
-      setActiveGroup: (activeGroup: Group) => set({ activeGroup })
+      setActiveGroup: (activeGroup: Group) => set({ activeGroup: camelizeKeys(activeGroup) }),
+
+      activeSchedule: undefined,
+      setActiveSchedule: (activeSchedule: any) => set({ activeSchedule: camelizeKeys(activeSchedule) }),
     }),
     {
       name: "match-queue-storage", // name of the item in storage

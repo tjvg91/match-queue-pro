@@ -29,7 +29,7 @@ export default function PlayerGamesScreen() {
         type="clear"
         text="I'll host instead"
         fontSize={isMobile ? 12 : 16}
-        onPress={() => router.replace('/pages/host')}
+        onPress={() => router.push('/pages/host')}
         />
       <Button
         type="clear"

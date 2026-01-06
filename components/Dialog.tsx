@@ -7,6 +7,7 @@ interface Props {
   width?: DimensionValue
   showClose?: boolean,
   style?: ViewStyle
+  dark?: boolean
 }
 
 const screenDimensions = Dimensions.get('screen');
@@ -14,7 +15,7 @@ const dialogWidth = Math.min(screenDimensions.width * 0.8, 480);
 const dialogHeight = screenDimensions.height * 0.8;
 
 const Dialog: React.FC<ModalProps & Props> = (props) => {
-  const { children, width, showClose, style, ...rest } = props;
+  const { children, width, showClose, style, dark, ...rest } = props;
   return (
     <Modal
       presentationStyle="overFullScreen"
@@ -23,17 +24,16 @@ const Dialog: React.FC<ModalProps & Props> = (props) => {
       {...rest}>
       <View style={styles.modalContainer}>
         <BlurView style={StyleSheet.absoluteFill} intensity={10} tint="dark" />
-        <View style={[styles.modal, showClose && { paddingTop: 45, paddingBottom: 35 },  style]}>
+        <View style={[styles.modal, showClose && { paddingTop: 45, paddingBottom: 35 }, dark && { backgroundColor: '#000' }, style]}>
           {
             showClose && (
               <ButtonIcon
                 style={{ position: 'absolute', top: 0, right: -5, width: "auto", paddingVertical: 10, paddingHorizontal: 0, margin: 0, zIndex: 20 }}
                 type="clear"
                 fontSize={15}
-                textColor={Colors.darkBlue}
+                textColor={dark ? Colors.gradientStopperLight : Colors.darkBlue}
                 onPress={props.onRequestClose}
                 icon="x">
-                
               </ButtonIcon>
             )
           }

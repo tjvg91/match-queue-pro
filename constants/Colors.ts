@@ -6,13 +6,15 @@
 const primary = '#176980';
 const secondary = '#268995';
 
-const blue = '#77c9f6ff';
+const blue = '#77c9f6';
 const darkBlue = '#002145';
 const green = '#0eaa42';
 const darkGreen = '#01452c';
-const red = '#f6bcbcff';
-const darkRed = '#bf1515ff';
+const red = '#f6bcbc';
+const darkRed = '#bf1515';
 const yellow = '#efb034';
+const darkOrange = '#bd632f';
+const orange = '#f7b48e';
 
 const gradientStopper = '#128961';
 const gradientStopperLight = '#66f0b9';
@@ -37,6 +39,8 @@ export const Colors = {
   red,
   darkRed,
   yellow,
+  orange,
+  darkOrange,
   label,
   gray,
   darkGray,
